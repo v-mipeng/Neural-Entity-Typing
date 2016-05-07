@@ -10,7 +10,9 @@ basedir = r"D:\Codes\Project\EntityTyping\Neural Entity Typing";
 
 data_path = os.path.join(basedir,"input");
 
-model_path = os.path.join(basedir,"output/models");
+model_path = os.path.join(basedir,"output/models")
+
+word2id_path = os.path.join(basedir, "input/table/word2id.txt")
 
 embed_path = r"D:\Data\Google-word2vec\GoogleNews-vectors-negative300-selected.txt"
 

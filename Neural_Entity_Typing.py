@@ -5,6 +5,7 @@ import numpy
 import sys
 import os
 import importlib
+import codecs
 
 import theano
 from theano import tensor
@@ -39,11 +40,23 @@ if __name__ == "__main__":
     train_path = os.path.join(data_path, "train")
     valid_path = os.path.join(data_path, "test")
 
+    word2id = None
+    if os.path.exists(config.word2id_path):
+        word2id = {}
+        with codecs.open(config.word2id_path, "r", encoding = "UTF-8") as f:
+            for line in f:
+                array = line.split('\t')
+                word2id[array[0]] = int(array[1])
     print("Loading training dataset...")
-    ds, train_stream = satori.setup_datastream(valid_path, config)
+    ds, train_stream = satori.setup_datastream(valid_path, config, word2id)
     print("Done!")
+    if  not os.path.exists(config.word2id_path):
+        word2id = ds.word2id
+        with codecs.open(config.word2id_path, "w+", encoding = "UTF-8") as f:
+            for key, value in word2id.iteritems():
+                f.write("%s\t%s\n" % (key, value))
     print("Loading validation dataset...")
-    _, valid_stream = satori.setup_datastream(valid_path, config, word2id = ds.word2id)
+    _, valid_stream = satori.setup_datastream(valid_path, config, word2id = word2id)
     print("Done!")
     dump_path = os.path.join(config.model_path, model_name+".pkl")
 

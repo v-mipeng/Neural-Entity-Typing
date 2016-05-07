@@ -12,6 +12,8 @@ data_path = os.path.join(basedir,"input");
 
 model_path = os.path.join(basedir,"output/models");
 
+word2id_path = os.path.join(basedir, "input/tables/word2id.txt")
+
 embed_path = r"D:\Data\Google-word2vec\GoogleNews-vectors-negative300-selected.txt"
 
 batch_size = 32
