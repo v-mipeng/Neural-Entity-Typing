@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 sys.setrecursionlimit(2000000)
 
 if __name__ == "__main__":
-    model_name = "deep_bidir_lstm"
+    model_name = "multi_time_lstm"
     config = importlib.import_module('.%s' % model_name, 'config')
     # Build datastream
     data_path = config.data_path
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     valid_path = os.path.join(data_path, "test")
 
     print("Loading training dataset...")
-    ds, train_stream = satori.setup_datastream(train_path, config)
+    ds, train_stream = satori.setup_datastream(valid_path, config)
     print("Done!")
     print("Loading validation dataset...")
     _, valid_stream = satori.setup_datastream(valid_path, config, word2id = ds.word2id)
