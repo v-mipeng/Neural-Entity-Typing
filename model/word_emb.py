@@ -10,7 +10,9 @@ class Lookup(LookupTable):
     
 
     def initialize_with_pretrain(self, index_value_pairs):
-        l = [value for _, value in index_value_pairs]
+        l = []
+        for i in range(min(100, len(index_value_pairs))):
+            l.append(index_value_pairs[i][1])
         narray = numpy.asarray(l)
         mean = numpy.mean(narray)
         var = numpy.var(narray)

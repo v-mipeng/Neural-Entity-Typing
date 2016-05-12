@@ -6,7 +6,7 @@ import os
 
 from model.multi_time_lstm import Model
 
-basedir = r"D:\Codes\Project\EntityTyping\Neural Entity Typing";
+basedir = r"./";
 
 data_path = os.path.join(basedir,"input");
 
@@ -14,7 +14,7 @@ model_path = os.path.join(basedir,"output/models");
 
 word2id_path = os.path.join(basedir, "input/tables/word2id.txt")
 
-embed_path = r"D:\Data\Google-word2vec\GoogleNews-vectors-negative300-selected.txt"
+embed_path = os.path.join(basedir, "input/tables/GoogleNews-vectors-negative300-selected.txt")
 
 batch_size = 32
 sort_batch_count = 20

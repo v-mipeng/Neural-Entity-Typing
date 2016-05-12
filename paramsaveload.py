@@ -17,13 +17,13 @@ class SaveLoadParams(SimpleExtension):
 		self.model = model
 	
 	def do_save(self):
-		with open(self.path, 'w') as f:
+		with open(self.path, 'wb') as f:
 			logger.info('Saving parameters to %s...'%self.path)
 			cPickle.dump(self.model.get_parameter_values(), f, protocol=cPickle.HIGHEST_PROTOCOL)
 	
 	def do_load(self):
 		try:
-			with open(self.path, 'r') as f:
+			with open(self.path, 'rb') as f:
 				logger.info('Loading parameters from %s...'%self.path)
 				self.model.set_parameter_values(cPickle.load(f))
 		except IOError:
