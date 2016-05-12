@@ -10,7 +10,7 @@ basedir = "./";
 
 data_path = os.path.join(basedir,"input");
 
-model_path = os.path.join(basedir,"output/models")
+model_path = os.path.join(basedir,"outputs/models")
 
 word2id_path = os.path.join(basedir, "input/tables/word2id.txt")
 

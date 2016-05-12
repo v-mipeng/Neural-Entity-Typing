@@ -117,6 +117,7 @@ if __name__ == "__main__":
                 [v for l in m.monitor_vars_valid for v in l],
                 valid_stream,
                 prefix='valid',
+                before_first_epoch = False,
                 every_n_batches=config.valid_freq),
         ]
     extensions += [
