@@ -25,7 +25,8 @@ lstm_size = 256
 
 n_labels = 15
 
-step_rule = AdaDelta(decay_rate=0.95, epsilon=1e-06)
+#step_rule = AdaDelta(decay_rate=0.95, epsilon=1e-06)
+step_rule = RMSProp(learning_rate = 1.0, decay_rate = 0.9)
 
 dropout = 0.0
 w_noise = 0.00

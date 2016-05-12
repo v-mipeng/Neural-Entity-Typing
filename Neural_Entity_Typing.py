@@ -48,7 +48,7 @@ if __name__ == "__main__":
                 array = line.split('\t')
                 word2id[array[0]] = int(array[1])
     print("Loading training dataset...")
-    ds, train_stream = satori.setup_datastream(valid_path, config, word2id)
+    ds, train_stream = satori.setup_datastream(train_path, config, word2id)
     print("Done!")
     if  not os.path.exists(config.word2id_path):
         word2id = ds.word2id
@@ -117,7 +117,6 @@ if __name__ == "__main__":
                 [v for l in m.monitor_vars_valid for v in l],
                 valid_stream,
                 prefix='valid',
-                before_first_epoch = False,
                 every_n_batches=config.valid_freq),
         ]
     extensions += [
