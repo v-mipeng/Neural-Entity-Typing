@@ -65,10 +65,10 @@ class SatoriDataset(IndexableDataset):
                     if begin < 0:
                         continue
                     if array[0] in self.to_label_id:
-                        self._label += [self.to_label_id[array[0]]]
+                        self._label += [numpy.int32(self.to_label_id[array[0]])]
                     else:
                         continue
-                    self._mention_end += [end - 1]
+                    self._mention_end += [numpy.int32(end - 1)]
                     contexts += [context]
         dataset = ()
         for context in contexts:
