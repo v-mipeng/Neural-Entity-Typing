@@ -31,13 +31,13 @@ class SatoriDataset(IndexableDataset):
             self.word2id = word2id
         self.path = path
         self.to_label_id = to_label_id
-        self._context = []
-        self._mention_end = []
+        self._order_context = []
+        self._reverse_context = []
         self._label = []
         self.load_data()
         self.vocab_size = len(self.word2id)
         super(SatoriDataset, self).__init__(
-            indexables = OrderedDict([('context', self._context), ('mention_end', self._mention_end), ('label', self._label)]),
+            indexables = OrderedDict([('order_context', self._order_context), ('reverse_context', self._reverse_context), ('label', self._label)]),
                                      **kwargs)
 
     def load_data(self):
@@ -49,7 +49,8 @@ class SatoriDataset(IndexableDataset):
                     return index, index+length
             return -1, -1
 
-        contexts = []
+        order_contexts = []
+        reverse_contexts = []
         files = os.listdir(self.path)
         for file in files:
             with codecs.open(os.path.join(self.path, file), "r", "UTF-8") as f:
@@ -65,14 +66,15 @@ class SatoriDataset(IndexableDataset):
                     if begin < 0:
                         continue
                     if array[0] in self.to_label_id:
-                        self._label += [self.to_label_id[array[0]]]
+                        self._label += [numpy.int32(self.to_label_id[array[0]])]
                     else:
                         continue
-                    self._mention_end += [end - 1]
-                    contexts += [context]
-        dataset = ()
-        for context in contexts:
-            self._context += [self.to_word_ids(context)]
+                    order_contexts += [[context[index] for index in range(end)]]
+                    reverse_contexts += [[context[len(context)-1-index] for index in range(len(context)-begin)]]
+        for order_context in order_contexts:
+            self._order_context += [self.to_word_ids(order_context)]
+        for reverse_context in reverse_contexts:
+            self._reverse_context += [self.to_word_ids(reverse_context)]
 
     def to_word_id(self, w):
         if w in self.word2id:
@@ -111,13 +113,13 @@ def setup_datastream(path, config, word2id = None):
        
     # Sort sets of multiple batches to make batches of similar sizes
     stream = Batch(stream, iteration_scheme=ConstantScheme(config.batch_size * config.sort_batch_count))
-    comparison = _balanced_batch_helper(stream.sources.index('context'))
+    comparison = _balanced_batch_helper(stream.sources.index('order_context'))
     stream = Mapping(stream, SortMapping(comparison))
     stream = Unpack(stream)
 
     # Add mask
     stream = Batch(stream, iteration_scheme=ConstantScheme(config.batch_size))
-    stream = Padding(stream, mask_sources=['context'], mask_dtype='int32')
+    stream = Padding(stream, mask_sources=['order_context','reverse_context'], mask_dtype='int32')
 
     return dataset, stream
 
