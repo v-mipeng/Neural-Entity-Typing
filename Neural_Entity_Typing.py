@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 sys.setrecursionlimit(2000000)
 
 if __name__ == "__main__":
-    model_name = "multi_time_lstm"
+    model_name = "deep_bidir_lstm"
     config = importlib.import_module('.%s' % model_name, 'config')
     # Build datastream
     data_path = config.data_path
