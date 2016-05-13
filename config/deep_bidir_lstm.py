@@ -1,4 +1,4 @@
-from blocks.algorithms import BasicMomentum, AdaDelta, RMSProp, Adam, CompositeRule, StepClipping
+from blocks.algorithms import BasicMomentum, AdaDelta, RMSProp, Adam, CompositeRule, StepClipping, Momentum
 from blocks.initialization import IsotropicGaussian, Constant
 from blocks.bricks import Tanh
 import math
@@ -26,7 +26,7 @@ lstm_size = 256
 n_labels = 15
 
 #step_rule = AdaDelta(decay_rate=0.95, epsilon=1e-06)
-step_rule = RMSProp(learning_rate = 1.0, decay_rate = 0.9)
+step_rule = Momentum(1, momentum = 0.1)
 
 dropout = 0.0
 w_noise = 0.00
