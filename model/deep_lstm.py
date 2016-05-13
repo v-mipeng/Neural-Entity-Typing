@@ -94,6 +94,3 @@ class Model():
             brick.biases_init = config.biases_init
             brick.initialize()
 
-        
-
-#  vim: set sts=4 ts=4 sw=4 tw=0 et :

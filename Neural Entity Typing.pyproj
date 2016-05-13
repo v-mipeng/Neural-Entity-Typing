@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3ebda6c3-5f65-4272-9d9c-a84a0d1b5935</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>multi_time_lstm.py</StartupFile>
+    <StartupFile>test\multi_time_lstm.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,15 +22,11 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="config\deepmind_deep_lstm.py" />
     <Compile Include="config\deep_bidir_lstm.py" />
     <Compile Include="config\multi_time_lstm.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="config\__init__.py" />
-    <Compile Include="dataset\satori.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="dataset\satori_multi.py">
       <SubType>Code</SubType>
     </Compile>
@@ -38,8 +34,8 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="dataset\__init__.py" />
-    <Compile Include="multi_time_lstm.py" />
-    <Compile Include="deep_bidir_lstm.py" />
+    <Compile Include="test\multi_time_lstm.py" />
+    <Compile Include="test\deep_bidir_lstm.py" />
     <Compile Include="model\deep_bidir_lstm.py" />
     <Compile Include="model\deep_lstm.py" />
     <Compile Include="model\multi_time_lstm.py">
@@ -54,9 +50,6 @@
     </Compile>
     <Compile Include="Neural_Entity_Typing.py" />
     <Compile Include="Test.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="test\deep_bidir_lstm.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
