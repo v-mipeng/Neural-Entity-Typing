@@ -71,6 +71,7 @@ class Model():
         self.sgd_cost = cost
         self.monitor_vars = [[cost], [error_rate]]
         self.monitor_vars_valid = [[cost], [error_rate]]
+        self.pred = pred
 
         # Initialize bricks
         for brick in bricks:

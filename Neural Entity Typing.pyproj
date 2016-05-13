@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3ebda6c3-5f65-4272-9d9c-a84a0d1b5935</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Neural_Entity_Typing.py</StartupFile>
+    <StartupFile>multi_time_lstm.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -31,7 +31,15 @@
     <Compile Include="dataset\satori.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="dataset\satori_multi.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="dataset\satori_bidir.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="dataset\__init__.py" />
+    <Compile Include="multi_time_lstm.py" />
+    <Compile Include="deep_bidir_lstm.py" />
     <Compile Include="model\deep_bidir_lstm.py" />
     <Compile Include="model\deep_lstm.py" />
     <Compile Include="model\multi_time_lstm.py">
@@ -48,11 +56,15 @@
     <Compile Include="Test.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="test\deep_bidir_lstm.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="dataset\" />
     <Folder Include="model\" />
     <Folder Include="config\" />
+    <Folder Include="test\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

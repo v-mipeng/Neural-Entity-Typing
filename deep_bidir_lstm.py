@@ -59,7 +59,7 @@ if __name__ == "__main__":
     
     # Build predictor
     cg = ComputationGraph(m.sgd_cost)
-    f_pred = theano.function(cg.inputs,m.pred)
+    f_pred = theano.function(cg.inputs[1:5],m.pred)
 
     # Do prediction and write the result to file
     des = os.path.join("./output/result/", model_name,".txt");

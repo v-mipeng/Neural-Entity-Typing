@@ -24,6 +24,7 @@ except ImportError:
     plot_avail = False
     print "No plotting extension available."
 
+import dataset
 from dataset import satori
 from paramsaveload import SaveLoadParams
 
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 sys.setrecursionlimit(2000000)
 
 if __name__ == "__main__":
-    model_name = "deep_bidir_lstm"
+    model_name = "multi_time_lstm"
     config = importlib.import_module('.%s' % model_name, 'config')
     # Build datastream
     data_path = config.data_path
@@ -48,7 +49,7 @@ if __name__ == "__main__":
                 array = line.split('\t')
                 word2id[array[0]] = int(array[1])
     print("Loading training dataset...")
-    ds, train_stream = satori.setup_datastream(train_path, config, word2id)
+    ds, train_stream = satori.setup_datastream(valid_path, config, word2id)
     print("Done!")
     if  not os.path.exists(config.word2id_path):
         word2id = ds.word2id

@@ -55,7 +55,7 @@ class SatoriDataset(IndexableDataset):
             with codecs.open(os.path.join(self.path, file), "r", "UTF-8") as f:
                 for line in f:
                     array = line.strip().split("\t")
-                    mention = array[16].split(",")                                 # get mention
+                    mention = array[0].split(" ")                                 # get mention
                     context = array[len(array)-1].split(" ")                                  # get context
                     if self.extract_vocab:
                         for word in context:
@@ -64,8 +64,8 @@ class SatoriDataset(IndexableDataset):
                     begin, end = get_mention_index(context,mention)
                     if begin < 0:
                         continue
-                    if array[0] in self.to_label_id:
-                        self._label += [numpy.int32(self.to_label_id[array[0]])]
+                    if array[1] in self.to_label_id:
+                        self._label += [numpy.int32(self.to_label_id[array[1]])]
                     else:
                         continue
                     self._mention_end += [numpy.int32(end - 1)]
