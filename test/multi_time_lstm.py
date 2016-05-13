@@ -46,7 +46,7 @@ if __name__ == "__main__":
     print("Loading test dataset...")
     ds, test_stream = satori_multi.setup_datastream(test_path, config, word2id)
     model_path = os.path.join(config.model_path, model_name+"_gpu.pkl")
-
+    
     # Build model
     m = config.Model(config, ds)
     cg = ComputationGraph(m.sgd_cost)
@@ -63,6 +63,7 @@ if __name__ == "__main__":
     cg = ComputationGraph(m.error_rate)
     f_error_rate = theano.function(cg.inputs, m.error_rate)
     error_rate_inputs = cg.inputs
+
     # Do prediction and write the result to file
     des = str("./output/result/%s on bbn train.txt" % model_name)
     writer = codecs.open(des,"w+")
@@ -72,6 +73,7 @@ if __name__ == "__main__":
         id2label[item[1]] = item[0]
     samples = 0
     error_rate = 0
+    offset = 0
     print("Predicting...")
     for inputs in test_stream.get_epoch_iterator():
         input_len = len(inputs[test_stream.sources.index(pred_inputs[0].name)])
@@ -84,8 +86,9 @@ if __name__ == "__main__":
                                   inputs[test_stream.sources.index(error_rate_inputs[2].name)],
                                   inputs[test_stream.sources.index(error_rate_inputs[3].name)],)*input_len
         samples += input_len
-        for true_label_id, label_id in zip(inputs[test_stream.sources.index("label")],label_ids):
-            writer.write("%s\t%s\n" % (id2label[int(true_label_id)],id2label[label_id]))
+        for true_label_id, label_id, mention, context in zip(inputs[test_stream.sources.index("label")],label_ids, ds.mention[offset:offset+input_len], ds.context[offset:offset+input_len]):
+            writer.write("%s\t%s\t%s\t%s\n" % (" ".join(mention),id2label[int(true_label_id)],id2label[label_id], " ".join(context)))
+        offset = offset+input_len
     writer.write("Error rate: %s" % (error_rate/samples))
     writer.close()
     print("Done!")

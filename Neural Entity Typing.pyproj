@@ -39,7 +39,7 @@
     </Compile>
     <Compile Include="dataset\__init__.py" />
     <Compile Include="multi_time_lstm.py" />
-    <Compile Include="deep_bidir_lstm.py" />
+    <Compile Include="test\deep_bidir_lstm.py" />
     <Compile Include="model\deep_bidir_lstm.py" />
     <Compile Include="model\deep_lstm.py" />
     <Compile Include="model\multi_time_lstm.py">
@@ -54,9 +54,6 @@
     </Compile>
     <Compile Include="Neural_Entity_Typing.py" />
     <Compile Include="Test.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="test\deep_bidir_lstm.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
