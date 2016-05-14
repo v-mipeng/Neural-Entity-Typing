@@ -18,6 +18,7 @@ class Model():
     def __init__(self, config, dataset):
         context = tensor.imatrix('context')                                 # shape: batch_size*sequence_length
         context_mask = tensor.imatrix('context_mask')
+        mention_begin = tensor.ivector('mention_begin')
         mention_end = tensor.ivector('mention_end')
         label = tensor.ivector('label')
         bricks = []
@@ -49,12 +50,13 @@ class Model():
                 lstm_hidden, _ = lstm.apply(inputs = lstm_tmp, states = h0, mask=context_mask.astype(theano.config.floatX))
             h0 = lstm_hidden[-1, :, :]
         # Create and apply output MLP
-        out_mlp = MLP(dims = [config.lstm_size] + [config.n_labels],
+        out_mlp = MLP(dims = [config.lstm_size*2] + [config.n_labels],
                           activations = [Identity()],
                           name='out_mlp')
         out_mlp.weights_init = IsotropicGaussian(std = numpy.sqrt(2)/numpy.sqrt(config.lstm_size+config.n_labels))
         bricks.append(out_mlp)
-        mention_hidden = lstm_hidden[mention_end, tensor.arange(context.shape[1]), :]   # Get mention hidden representations
+        mention_hidden = tensor.concatenate([lstm_hidden[mention_end, tensor.arange(context.shape[1]), :],
+                                            lstm_hidden[mention_begin, tensor.arange(context.shape[1]), :]],axis=1)
         self.mention_hidden = mention_hidden
         probs = out_mlp.apply(mention_hidden)
         # Calculate prediction, cost and error rate

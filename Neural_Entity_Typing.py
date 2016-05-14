@@ -24,6 +24,7 @@ except ImportError:
     plot_avail = False
     print "No plotting extension available."
 
+import dataset
 from dataset import satori
 from paramsaveload import SaveLoadParams
 

@@ -22,3 +22,4 @@ class Lookup(LookupTable):
         for index , value in index_value_pairs:
             w[index] = value
         self.W.set_value(w)
+

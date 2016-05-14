@@ -36,10 +36,8 @@ class Model():
         # Apply embedding
         order_context_embed = embed.apply(order_context)
         reverse_context_embed = embed.apply(reverse_context)
-        #self.reverse_context_embed = reverse_context_embed
 
         # Create and apply LSTM
-
         fwd_lstm_ins = Linear(input_dim=config.embed_size, output_dim=4 * config.lstm_size, name='fwd_lstm_in')
         fwd_lstm = LSTM(dim=config.lstm_size, activation=Tanh(), name='fwd_lstm')
 
@@ -50,11 +48,9 @@ class Model():
 
         fwd_tmp = fwd_lstm_ins.apply(order_context_embed)
         bwd_tmp = fwd_lstm_ins.apply(reverse_context_embed)
-        #self.bwd_tmp = bwd_tmp
         fwd_hidden, _ = fwd_lstm.apply(fwd_tmp, mask=order_context_mask.astype(theano.config.floatX))
-        #self.bwd_mask = reverse_context_mask.astype(theano.config.floatX)
         bwd_hidden, _ = bwd_lstm.apply(bwd_tmp, mask=reverse_context_mask.astype(theano.config.floatX))  
-        #self.bwd_hidden = bwd_hidden[-1,:,:]
+
         # Create and apply output MLP
         out_mlp = MLP(dims = [2*config.lstm_size] + [config.n_labels],
                           activations = [Identity()],
@@ -62,6 +58,7 @@ class Model():
         bricks.append(out_mlp)
 
         probs = out_mlp.apply(tensor.concatenate([fwd_hidden[-1,:,:],bwd_hidden[-1,:,:]], axis=1))
+
         # Calculate prediction, cost and error rate
         pred = probs.argmax(axis=1)
         cost = Softmax().categorical_cross_entropy(label, probs).mean()
@@ -96,7 +93,7 @@ def initialize_embed(config, dataset):
                     vector = []
                     for i in range(1,len(array)):
                         vector.append(float(array[i]))
-                    embs += [(word2id[array[0]], numpy.asarray(vector, theano.config.floatX))]
+                    embs += [(word2id[array[0]], numpy.asarray(vector, dtype = theano.config.floatX))]
     return embs
 
 #  vim: set sts=4 ts=4 sw=4 tw=0 et :
