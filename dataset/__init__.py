@@ -1,2 +1,2 @@
-import satori
-import satori_test
+import satori_bidir
+import satori_multi

@@ -25,7 +25,7 @@ except ImportError:
     print "No plotting extension available."
 
 import dataset
-from dataset import satori
+from dataset import satori_multi
 from paramsaveload import SaveLoadParams
 
 logging.basicConfig(level='INFO')
@@ -41,6 +41,7 @@ if __name__ == "__main__":
     train_path = os.path.join(data_path, "train")
     valid_path = os.path.join(data_path, "test")
 
+    # Load word2id and word_freq dictionary
     word2id = None
     if os.path.exists(config.word2id_path):
         word2id = {}
@@ -48,16 +49,32 @@ if __name__ == "__main__":
             for line in f:
                 array = line.split('\t')
                 word2id[array[0]] = int(array[1])
+    word_freq = None
+    if os.path.exists(config.word_freq_path):
+        word_freq = {}
+        with codecs.open(config.word_freq_path, "r", encoding = "UTF-8") as f:
+            for line in f:
+                array = line.split('\t')
+                word_freq[array[0]] = int(array[1])
+    
     print("Loading training dataset...")
-    ds, train_stream = satori.setup_datastream(valid_path, config, word2id)
+    ds, train_stream = satori_multi.setup_datastream(valid_path, config, word2id, word_freq)
     print("Done!")
+
+    # Save word2id and word_freq
     if  not os.path.exists(config.word2id_path):
         word2id = ds.word2id
         with codecs.open(config.word2id_path, "w+", encoding = "UTF-8") as f:
             for key, value in word2id.iteritems():
                 f.write("%s\t%s\n" % (key, value))
+    if  not os.path.exists(config.word_freq_path):
+        word2id = ds.word_freq
+        with codecs.open(config.word_freq_path, "w+", encoding = "UTF-8") as f:
+            for key, value in word_freq.iteritems():
+                f.write("%s\t%s\n" % (key, value))
+
     print("Loading validation dataset...")
-    _, valid_stream = satori.setup_datastream(valid_path, config, word2id = word2id)
+    _, valid_stream = satori_multi.setup_datastream(valid_path, config, word2id = word2id, word_freq = word_freq)
     print("Done!")
     dump_path = os.path.join(config.model_path, model_name+".pkl")
 

@@ -2,6 +2,7 @@
 import logging
 import random
 import numpy
+import glob
 
 import cPickle
 
@@ -21,17 +22,21 @@ from collections import OrderedDict
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
-regex1 = re.compile("[A-Z]+")
-regex2 = re.compile("[a-z]+")
-regex3 = re.compile("[\d,]+$")
-regex4 = re.compile("[^\w/,]")
+regex1 = re.compile(r"[^\w/,]")
+regex2 = re.compile(r"^[\d,]+$")
+regex3 = re.compile(r"[A-Z]+")
+regex4 = re.compile(r"[a-z]+")
+regex5 = re.compile(r"\d+")
+
+
 def stem(word):
-    word = word.decode('utf-8').encode('ASCII')
-    if len(regex4.findall(word)) > 0:
+    if len(regex1.findall(word)) > 0:
         return "<SYM>"      # Add mask on words like http://sldkf, 20,409,300
-    word = regex1.sub("AA", word)
-    word = regex2.sub("aa", word)
-    word = regex3.sub("00", word)
+    if regex2.match(word):
+        return "00"
+    word = regex3.sub("AA", word)
+    word = regex4.sub("aa", word)
+    word = regex5.sub("00", word)
     return word.encode('utf-8')
 
 class SatoriDataset(IndexableDataset):
@@ -59,11 +64,12 @@ class SatoriDataset(IndexableDataset):
         else:
             self.extract_vocab = False
             self.word2id = word2id
+        self.path = path
         if word_freq is None:
-            self.word_freq = self.count_word_freq()
+            self.word_freq = None
+            self.count_word_freq()
         else:
             self.word_freq = word_freq
-        self.path = path
         self.to_label_id = to_label_id
         self._context = []
         self._mention_begin = []
@@ -80,11 +86,11 @@ class SatoriDataset(IndexableDataset):
         '''
         Count word frequency.
         '''
-        files = listdir(self.path)
+        files = [f for f in os.listdir(self.path) if f.endswith('.txt')]
         self.word_freq = dict()
         for file in files:
-            if os.path.isfile(os.path.join(basedir,file)):
-                with codecs.open(os.path.join(self.path,file),"r", "UTF-8") as f:
+            if os.path.isfile(os.path.join(self.path, file)):
+                with codecs.open(os.path.join(self.path, file),"r", "UTF-8") as f:
                     for line in f:
                         try:
                             line = line.strip()
@@ -95,13 +101,16 @@ class SatoriDataset(IndexableDataset):
                             contexts = context.split(' ')
                             for word in contexts:
                                 word = word.decode('utf-8').lower()
-                                if word in word_freq:
+                                if word in self.word_freq:
                                     self.word_freq[word] += 1
                                 else:
                                     self.word_freq[word] = 1
                         except Exception as e:
-                            print("find error in counting word frequency!")
-
+                            try:
+                                print(e.message)
+                                print("Find error during counting word frequency!")
+                            except:
+                                print("Find error during counting word frequency!")
     def load_data(self):
 
         def get_mention_index(context, mention):
@@ -112,38 +121,47 @@ class SatoriDataset(IndexableDataset):
             return -1, -1
 
         contexts = []
-        files = os.listdir(self.path)
+        files = [f for f in os.listdir(self.path) if f.endswith('.txt')]
         for file in files:
             with codecs.open(os.path.join(self.path, file), "r", "UTF-8") as f:
                 for line in f:
-                    array = line.strip().split("\t")
-                    mention = array[0].split(" ")                                 
-                    context = array[len(array)-1].split(" ")                                  
-                    begin, end = get_mention_index(context,mention)
-                    # Add mask on mention and context
-                    for i in range(len(context)):
-                        word = context[i].decode('utf-8').lower()
-                        if (word not in word_freq) or (word_freq[word] < 10):
-                            context[i] = stem(context[i])
-                    for i in range(len(mention)):
-                        word = mention[i].decode('utf-8').lower()
-                        if (word not in word_freq) or (word_freq[word] < 10):
-                            mention[i] = stem(mention[i])
-                    # Extract word2id table
-                    if self.extract_vocab:
-                        for word in context:
-                            if word not in self.word2id:
-                                self.word2id[word] = len(self.word2id)
-                    if begin < 0:
-                        continue
-                    if array[1] in self.to_label_id:
-                        self._label += [numpy.int32(self.to_label_id[array[1]])]
-                    else:
-                        continue
-                    if begin == 0:
-                        contexts += ['<BOS>',context]
-                    self._mention_begin += [numpy.int32(begin)]
-                    self._mention_end += [numpy.int32(end)]
+                    try:
+                        array = line.strip().split("\t")
+                        mention = array[0].split(" ")                                 
+                        context = array[len(array)-1].split(" ")                                  
+                        begin, end = get_mention_index(context,mention)
+
+                        # Add mask on mention and context
+                        for i in range(len(context)):
+                            word = context[i].decode('utf-8').lower()
+                            if (word not in self.word_freq) or (self.word_freq[word] < 10):
+                                context[i] = stem(context[i])
+                        for i in range(len(mention)):
+                            word = mention[i].decode('utf-8').lower()
+                            if (word not in self.word_freq) or (self.word_freq[word] < 10):
+                                mention[i] = stem(mention[i])
+
+                        # Extract word2id table
+                        if self.extract_vocab:
+                            for word in context:
+                                if word not in self.word2id:
+                                    self.word2id[word] = len(self.word2id)
+                        if begin < 0:
+                            continue
+                        if array[1] in self.to_label_id:
+                            self._label += [numpy.int32(self.to_label_id[array[1]])]
+                        else:
+                            continue
+                        # Add begin_of_sentence label
+                        contexts += [['<BOS>']+context]   
+                        self._mention_begin += [numpy.int32(begin)]
+                        self._mention_end += [numpy.int32(end)]
+                    except Exception as e:
+                        try:
+                            print(e.message)
+                            print("Find Error during loading dataset!")
+                        except:
+                            print("Find Error during loading dataset!")
         dataset = ()
         for context in contexts:
             self._context += [self.to_word_ids(context)]
@@ -178,8 +196,8 @@ class _balanced_batch_helper(object):
     def __call__(self, data):
         return data[self.key].shape[0]  # sort key
 
-def setup_datastream(path, config, word2id = None):
-    dataset = SatoriDataset(path, config.to_label_id, word2id)
+def setup_datastream(path, config, word2id = None, word_freq = None):
+    dataset = SatoriDataset(path = path, to_label_id = config.to_label_id, word2id = word2id, word_freq = word_freq)
     it = ShuffledExampleScheme(dataset.num_examples)
     stream = DataStream(dataset, iteration_scheme=it)
        
