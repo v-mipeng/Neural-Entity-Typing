@@ -63,6 +63,8 @@ class SatoriDataset(IndexableDataset):
                             if word not in self.word2id:
                                 self.word2id[word] = len(self.word2id)
                     begin, end = get_mention_index(context,mention)
+                    if len(context)>2000:
+                        continue
                     if begin < 0:
                         continue
                     if array[1] in self.to_label_id:
@@ -101,3 +103,4 @@ def setup_datastream(path, config, word2id = None):
     stream = Padding(stream, mask_sources=['order_context','reverse_context'], mask_dtype='int32')
 
     return dataset, stream
+
