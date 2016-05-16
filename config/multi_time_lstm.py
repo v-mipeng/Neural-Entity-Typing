@@ -30,6 +30,7 @@ n_labels = 15
 
 step_rule = CompositeRule([RMSProp(decay_rate=0.95, learning_rate=1e-4),
                            BasicMomentum(momentum=0.9)])
+step_rule = AdaDelta(decay_rate = 0.95, epsilon = 1e-06)
 dropout = 0.0
 w_noise = 0.00
 
@@ -39,18 +40,18 @@ print_freq = 100    # measured by batches
 
 to_label_id = {
 u"music.music": 0,
-u"broadcast.content": 1,
-u"book.written_work": 2,
-u"award.award": 3,
-u"body.part": 4,
-u"chemicstry.chemicstry": 5,
-u"time.event": 6,
-u"food.food": 7,
-u"language.language": 8,
-u"location.location": 9,
-u"organization.organization": 10,
-u"people.person": 11,
-u"computer.software": 12,
-u"commerce.consumer_product": 13,
-u"commerce.electronics_product": 14,
+u"broadcast.content": 0,
+u"book.written_work": 0,
+u"award.award": 0,
+u"body.part": 0,
+u"chemicstry.chemicstry": 0,
+u"time.event": 0,
+u"food.food": 0,
+u"language.language": 0,
+u"location.location": 1,
+u"organization.organization": 2,
+u"people.person": 3,
+u"computer.software": 4,
+u"commerce.consumer_product": 4,
+u"commerce.electronics_product": 4,
 }

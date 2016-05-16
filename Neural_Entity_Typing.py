@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # Build datastream
     data_path = config.data_path
     train_path = os.path.join(data_path, "train")
-    valid_path = os.path.join(data_path, "test")
+    valid_path = os.path.join(data_path, "valid")
 
     # Load word2id and word_freq dictionary
     word2id = None
