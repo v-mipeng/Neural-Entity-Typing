@@ -33,7 +33,7 @@ if __name__ == "__main__":
     config = importlib.import_module('.%s' % model_name, 'config')
 
     # Build test datastream
-    test_path = os.path.join(config.data_path, "test/conll")
+    test_path = os.path.join(config.data_path, "test/bbn")
     # load word2id and word_freq
     if os.path.exists(config.word2id_path):
         word2id = {}
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     error_rate_inputs = cg.inputs
 
     # Do prediction and write the result to file
-    des = str("./output/result/%s on conll train.txt" % model_name)
+    des = str("./output/result/%s on bbn train.txt" % model_name)
     writer = codecs.open(des,"w+")
     label2id = config.to_label_id
     id2label = {}
