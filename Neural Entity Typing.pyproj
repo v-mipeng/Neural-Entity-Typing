@@ -34,6 +34,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="dataset\__init__.py" />
+    <Compile Include="predict\multi_time_lstm.py" />
     <Compile Include="test\deep_bidir_lstm.py" />
     <Compile Include="model\deep_bidir_lstm.py" />
     <Compile Include="model\deep_lstm.py" />
@@ -57,6 +58,7 @@
     <Folder Include="dataset\" />
     <Folder Include="model\" />
     <Folder Include="config\" />
+    <Folder Include="predict\" />
     <Folder Include="test\" />
   </ItemGroup>
   <PropertyGroup>

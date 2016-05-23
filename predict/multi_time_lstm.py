@@ -33,7 +33,7 @@ if __name__ == "__main__":
     config = importlib.import_module('.%s' % model_name, 'config')
 
     # Build test datastream
-    test_path = os.path.join(config.data_path, "test")
+    test_path = os.path.join(config.data_path, "test/bbn")
     # load word2id and word_freq
     if os.path.exists(config.word2id_path):
         word2id = {}
