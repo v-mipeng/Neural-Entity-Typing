@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -48,6 +48,16 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Neural_Entity_Typing.py" />
+    <Compile Include="script\config.py" />
+    <Compile Include="script\english_filter.py" />
+    <Compile Include="script\format_script.py" />
+    <Compile Include="script\freq_script.py" />
+    <Compile Include="script\hypen_script.py" />
+    <Compile Include="script\len_script.py" />
+    <Compile Include="script\mask_script.py" />
+    <Compile Include="script\sym_script.py" />
+    <Compile Include="script\tokenize_script.py" />
+    <Compile Include="script\__init__.py" />
     <Compile Include="Test.py">
       <SubType>Code</SubType>
     </Compile>

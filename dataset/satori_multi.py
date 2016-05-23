@@ -85,6 +85,7 @@ class SatoriDataset(IndexableDataset):
 
 
     def count_word_freq(self):
+    
         '''
         Count word frequency.
         '''
@@ -113,6 +114,7 @@ class SatoriDataset(IndexableDataset):
                                 print("Find error during counting word frequency!")
                             except:
                                 print("Find error during counting word frequency!")
+    
     def load_data(self):
 
         def get_mention_index(context, mention):
