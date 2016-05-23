@@ -27,6 +27,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="config\__init__.py" />
+    <Compile Include="dataset\multi_pred.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="dataset\satori_multi.py">
       <SubType>Code</SubType>
     </Compile>
@@ -34,7 +37,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="dataset\__init__.py" />
-    <Compile Include="predict\multi_time_lstm.py" />
     <Compile Include="test\deep_bidir_lstm.py" />
     <Compile Include="model\deep_bidir_lstm.py" />
     <Compile Include="model\deep_lstm.py" />
@@ -49,9 +51,20 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Neural_Entity_Typing.py" />
+    <Compile Include="script\config.py" />
+    <Compile Include="script\english_script.py" />
+    <Compile Include="script\format_script.py" />
+    <Compile Include="script\freq_script.py" />
+    <Compile Include="script\hypen_script.py" />
+    <Compile Include="script\len_script.py" />
+    <Compile Include="script\mask_script.py" />
+    <Compile Include="script\sym_script.py" />
+    <Compile Include="script\tokenize_script.py" />
+    <Compile Include="script\__init__.py" />
     <Compile Include="Test.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="predict\multi_time_lstm.py" />
     <Compile Include="test\multi_time_lstm.py" />
   </ItemGroup>
   <ItemGroup>
@@ -59,6 +72,7 @@
     <Folder Include="model\" />
     <Folder Include="config\" />
     <Folder Include="predict\" />
+    <Folder Include="script\" />
     <Folder Include="test\" />
   </ItemGroup>
   <PropertyGroup>

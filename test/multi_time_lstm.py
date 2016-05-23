@@ -33,7 +33,7 @@ if __name__ == "__main__":
     config = importlib.import_module('.%s' % model_name, 'config')
 
     # Build test datastream
-    test_path = os.path.join(config.data_path, "test")
+    test_path = os.path.join(config.data_path, "temp")
     # load word2id and word_freq
     if os.path.exists(config.word2id_path):
         word2id = {}
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     print("Loading test dataset...")
     ds, test_stream = satori_multi.setup_datastream(test_path, config, word2id, word_freq)
-    model_path = os.path.join(config.model_path, model_name+"_gpu.pkl")
+    model_path = os.path.join(config.model_path, model_name+"_on_satori_and_bbn.pkl")
     
     # Build model
     m = config.Model(config, ds)
@@ -74,12 +74,16 @@ if __name__ == "__main__":
     error_rate_inputs = cg.inputs
 
     # Do prediction and write the result to file
-    des = str("./output/result/%s on bbn train.txt" % model_name)
+    des = str("./output/result/%s on newoffering.txt" % model_name)
     writer = codecs.open(des,"w+")
     label2id = config.to_label_id
-    id2label = {}
-    for item in label2id.items():
-        id2label[item[1]] = item[0]
+    id2label = {
+    0:"other",
+    1:"location",
+    2:"organization",
+    3:"person",
+    4:"product"
+    }
     samples = 0
     error_rate = 0
     offset = 0
