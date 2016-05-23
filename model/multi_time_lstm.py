@@ -49,6 +49,7 @@ class Model():
             else:
                 lstm_hidden, _ = lstm.apply(inputs = lstm_tmp, states = h0, mask=context_mask.astype(theano.config.floatX))
             h0 = lstm_hidden[-1, :, :]
+
         # Create and apply output MLP
         out_mlp = MLP(dims = [config.lstm_size*2] + [config.n_labels],
                           activations = [Identity()],

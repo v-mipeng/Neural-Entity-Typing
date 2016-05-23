@@ -68,7 +68,7 @@ if __name__ == "__main__":
             for key, value in word2id.iteritems():
                 f.write("%s\t%s\n" % (key, value))
     if  not os.path.exists(config.word_freq_path):
-        word2id = ds.word_freq
+        word_freq = ds.word_freq
         with codecs.open(config.word_freq_path, "w+", encoding = "UTF-8") as f:
             for key, value in word_freq.iteritems():
                 f.write("%s\t%s\n" % (key, value))
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     print("Loading validation dataset...")
     _, valid_stream = satori_multi.setup_datastream(valid_path, config, word2id = word2id, word_freq = word_freq)
     print("Done!")
-    dump_path = os.path.join(config.model_path, model_name+".pkl")
+    dump_path = os.path.join(config.model_path, model_name+"_on_satori.pkl")
 
     # Build model
     m = config.Model(config, ds)
@@ -141,8 +141,6 @@ if __name__ == "__main__":
             Printing(every_n_batches=config.print_freq, after_epoch=True),
             ProgressBar()
     ]
-
-
 
 
     main_loop = MainLoop(

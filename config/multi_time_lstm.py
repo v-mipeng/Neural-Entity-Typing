@@ -12,9 +12,9 @@ data_path = os.path.join(basedir,"input");
 
 model_path = os.path.join(basedir,"output/models");
 
-word2id_path = os.path.join(basedir, "input/tables/word2id.txt")
+word2id_path = os.path.join(basedir, "input/tables/satori/word2id.txt")
 
-word_freq_path = os.path.join(basedir, "input/tables/word freq.txt")
+word_freq_path = os.path.join(basedir, "input/tables/satori/word freq.txt")
 
 embed_path = os.path.join(basedir, "input/tables/GoogleNews-vectors-negative300-selected.txt")
 
