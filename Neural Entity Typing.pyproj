@@ -47,8 +47,12 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Neural_Entity_Typing.py" />
+    <Compile Include="script\analyze\config.py" />
+    <Compile Include="script\analyze\sample_num_script.py" />
+    <Compile Include="script\analyze\__init__.py" />
     <Compile Include="script\config.py" />
-    <Compile Include="script\english_filter.py" />
+    <Compile Include="script\english_script.py" />
+    <Compile Include="script\ext_emb_script.py" />
     <Compile Include="script\format_script.py" />
     <Compile Include="script\freq_script.py" />
     <Compile Include="script\hypen_script.py" />
@@ -66,6 +70,10 @@
     <Folder Include="model\" />
     <Folder Include="config\" />
     <Folder Include="script\" />
+    <Folder Include="script\analyze\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="script\analyze\config.pyc" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
