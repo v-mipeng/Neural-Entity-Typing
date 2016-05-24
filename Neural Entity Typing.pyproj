@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3ebda6c3-5f65-4272-9d9c-a84a0d1b5935</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>test\multi_time_lstm.py</StartupFile>
+    <StartupFile>Test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -37,6 +37,18 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="dataset\__init__.py" />
+    <Compile Include="script\analyze\config.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="script\analyze\sample_num_script.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="script\analyze\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="script\ext_emb_script.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="test\deep_bidir_lstm.py" />
     <Compile Include="model\deep_bidir_lstm.py" />
     <Compile Include="model\deep_lstm.py" />
@@ -73,6 +85,7 @@
     <Folder Include="config\" />
     <Folder Include="predict\" />
     <Folder Include="script\" />
+    <Folder Include="script\analyze\" />
     <Folder Include="test\" />
   </ItemGroup>
   <PropertyGroup>
