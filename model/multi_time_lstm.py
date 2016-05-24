@@ -84,16 +84,14 @@ def initialize_embed(config, dataset):
     embs = []
     with codecs.open(path,'r','UTF-8') as f:
         for line in f:
-             for line in f:
-                word = line.split(' ', 1)[0]
-                if word in word2id:
-                    array = line.split(' ')
-                    if len(array) != config.embed_size + 1:
-                        return None
-                    vector = []
-                    for i in range(1,len(array)):
-                        vector.append(float(array[i]))
-                    embs += [(word2id[array[0]], numpy.asarray(vector, theano.config.floatX))]
+            word = line.split(' ', 1)[0]
+            if word in word2id:
+                array = line.strip().split(' ')
+                if len(array) != config.embed_size + 1:
+                    raise Exception("Embedded dimension mismatch!")
+                    return None
+                vector = []
+                for i in range(1,len(array)):
+                    vector.append(float(array[i]))
+                embs += [(word2id[array[0]], numpy.asarray(vector, theano.config.floatX))]
     return embs
-
-#  vim: set sts=4 ts=4 sw=4 tw=0 et :
