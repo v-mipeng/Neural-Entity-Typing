@@ -25,8 +25,7 @@ lstm_size = 256
 
 n_labels = 15
 
-step_rule = CompositeRule([RMSProp(decay_rate=0.95, learning_rate=1e-4),
-                           BasicMomentum(momentum=0.9)])
+step_rule = AdaDelta(decay_rate = 0.95, epsilon = 0.95)
 
 dropout = 0.0
 w_noise = 0.00

@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3ebda6c3-5f65-4272-9d9c-a84a0d1b5935</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Test.py</StartupFile>
+    <StartupFile>script\web\test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -37,16 +37,16 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="dataset\__init__.py" />
-    <Compile Include="script\analyze\config.py">
+    <Compile Include="script\web\entity_linking_api.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="script\analyze\sample_num_script.py">
+    <Compile Include="script\web\json_script.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="script\analyze\__init__.py">
+    <Compile Include="script\web\test.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="script\ext_emb_script.py">
+    <Compile Include="script\web\__init__.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="test\deep_bidir_lstm.py" />
@@ -85,7 +85,7 @@
     <Folder Include="config\" />
     <Folder Include="predict\" />
     <Folder Include="script\" />
-    <Folder Include="script\analyze\" />
+    <Folder Include="script\web\" />
     <Folder Include="test\" />
   </ItemGroup>
   <PropertyGroup>
