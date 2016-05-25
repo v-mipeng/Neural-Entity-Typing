@@ -91,7 +91,7 @@ def predict(char_begins, char_ends, contexts):
     ds, stream = multi_pred.setup_datastream(char_begins, char_ends, contexts, word2id, word_freq)
     labels = ds.label
     offset = 0
-    for inputs in test_stream.get_epoch_iterator():
+    for inputs in stream.get_epoch_iterator():
         input_len = len(inputs[stream.sources.index(pred_inputs[0].name)])
 
         label_ids = f_pred(inputs[stream.sources.index(pred_inputs[0].name)],

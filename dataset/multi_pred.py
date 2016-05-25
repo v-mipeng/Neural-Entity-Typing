@@ -90,7 +90,7 @@ class PredDataset(IndexableDataset):
         offset = 0
         for char_begin, char_end, context in zip(char_begins,char_ends, contexts):
             try:
-                mention = context[char_start,char_end+1]
+                mention = context[char_start,char_end]
                 mention_tokens = nltk.word_tokenize(mention)
                 context_tokens = None
                 for start, end in PunktSentenceTokenizer.span_tokenize(context):
@@ -138,9 +138,5 @@ def setup_datastream(char_begins, char_ends, contexts, config, word2id, word_fre
     it = SequentialScheme(dataset.num_examples, config.batch_size)
     stream = DataStream(dataset, iteration_scheme=it)
     # Add mask
-    stream = Padding(stream, mask_sources=['context'], mask_dtype='int32')
-    # Debug
-    for data in stream.get_epoch_iterator():
-        d = data
-        pass    
+    stream = Padding(stream, mask_sources=['context'], mask_dtype='int32') 
     return dataset, stream

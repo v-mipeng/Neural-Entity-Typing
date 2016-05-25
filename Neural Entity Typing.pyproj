@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3ebda6c3-5f65-4272-9d9c-a84a0d1b5935</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>test\multi_time_lstm.py</StartupFile>
+    <StartupFile>script\label_script.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -27,6 +27,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="config\__init__.py" />
+    <Compile Include="dataset\multi_pred.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="dataset\satori_multi.py">
       <SubType>Code</SubType>
     </Compile>
@@ -34,6 +37,21 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="dataset\__init__.py" />
+    <Compile Include="script\label_script.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="script\web\entity_linking_api.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="script\web\json_script.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="script\web\test.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="script\web\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="test\deep_bidir_lstm.py" />
     <Compile Include="model\deep_bidir_lstm.py" />
     <Compile Include="model\deep_lstm.py" />
@@ -49,7 +67,7 @@
     </Compile>
     <Compile Include="Neural_Entity_Typing.py" />
     <Compile Include="script\config.py" />
-    <Compile Include="script\english_filter.py" />
+    <Compile Include="script\english_script.py" />
     <Compile Include="script\format_script.py" />
     <Compile Include="script\freq_script.py" />
     <Compile Include="script\hypen_script.py" />
@@ -61,12 +79,16 @@
     <Compile Include="Test.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="predict\multi_time_lstm.py" />
     <Compile Include="test\multi_time_lstm.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="dataset\" />
     <Folder Include="model\" />
     <Folder Include="config\" />
+    <Folder Include="predict\" />
+    <Folder Include="script\" />
+    <Folder Include="script\web\" />
     <Folder Include="test\" />
   </ItemGroup>
   <PropertyGroup>
