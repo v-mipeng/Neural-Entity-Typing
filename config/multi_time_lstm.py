@@ -16,12 +16,7 @@ word2id_path = os.path.join(basedir, "input/tables/satori bbn and conll/word2id.
 
 word_freq_path = os.path.join(basedir, "input/tables/satori bbn and conll/word freq.txt")
 
-embed_path = os.path.join(basedir, "input/tables/GoogleNews-vectors-negative300-selected.txt")
-
-type2id_path = os.path.join(basedir, "input/tables/type2id.txt")
-
-int_type = "int32"
-float_type = "float32"
+embed_path = os.path.join(basedir, "input/tables/word embedding.txt")
 
 batch_size = 32
 sort_batch_count = 20
@@ -31,13 +26,10 @@ embed_size = 300
 lstm_time = 2
 lstm_size = 256
 
-type_embed_size = 100
+n_labels = 5
 
-n_labels = 15
+step_rule = AdaDelta(0.95, 1e-6)
 
-step_rule = CompositeRule([RMSProp(decay_rate=0.95, learning_rate=1e-4),
-                           BasicMomentum(momentum=0.9)])
-step_rule = AdaDelta(decay_rate = 0.95, epsilon = 1e-06)
 dropout = 0.0
 w_noise = 0.00
 

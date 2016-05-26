@@ -21,6 +21,7 @@ except ImportError:
 
 
 from dataset import satori_multi_test as satori_multi
+
 from paramsaveload import SaveLoadParams
 
 logging.basicConfig(level='INFO')

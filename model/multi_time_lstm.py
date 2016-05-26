@@ -2,7 +2,6 @@ import theano
 from theano import tensor
 import numpy
 import codecs
-import theano.configparser
 
 from blocks.bricks import Tanh, Softmax, Linear, MLP, Identity, Rectifier
 from blocks.bricks.lookup import LookupTable
@@ -19,8 +18,6 @@ class Model():
     def __init__(self, config, dataset):
         context = tensor.imatrix('context')                                 # shape: batch_size*sequence_length
         context_mask = tensor.imatrix('context_mask')
-        type = tensor.imatrix('type')
-        type_weight = tensor.matrix('type_weight', dtype="float32")
         mention_begin = tensor.ivector('mention_begin')
         mention_end = tensor.ivector('mention_end')
         label = tensor.ivector('label')
@@ -35,13 +32,6 @@ class Model():
         embed = Lookup(dataset.vocab_size, config.embed_size, name='word_embed')
         embs = initialize_embed(config, dataset)
         embed.initialize_with_pretrain(embs)                    # initialize embeding table with pre-traing values
-
-        # Embed types
-        type_lookup = LookupTable(dataset.type_size, config.type_embed_size, name="type_embed")
-        type_lookup.weights_init = IsotropicGaussian(std= 1/numpy.sqrt(config.type_embed_size))
-        type_lookup.initialize()
-        type_embed = (type_lookup.apply(type)*type_weight[:,:,None]).sum(axis=1)
-
         # Apply embedding
         context_embed = embed.apply(context)
 
@@ -59,9 +49,8 @@ class Model():
             else:
                 lstm_hidden, _ = lstm.apply(inputs = lstm_tmp, states = h0, mask=context_mask.astype(theano.config.floatX))
             h0 = lstm_hidden[-1, :, :]
-
         # Create and apply output MLP
-        out_mlp = MLP(dims = [config.lstm_size*2+config.type_embed_size] + [config.n_labels],
+        out_mlp = MLP(dims = [config.lstm_size*2] + [config.n_labels],
                           activations = [Identity()],
                           name='out_mlp')
         out_mlp.weights_init = IsotropicGaussian(std = numpy.sqrt(2)/numpy.sqrt(config.lstm_size+config.n_labels))
@@ -69,8 +58,7 @@ class Model():
         mention_hidden = tensor.concatenate([lstm_hidden[mention_end, tensor.arange(context.shape[1]), :],
                                             lstm_hidden[mention_begin, tensor.arange(context.shape[1]), :]],axis=1)
         self.mention_hidden = mention_hidden
-        mlp_input = tensor.concatenate([mention_hidden,type_embed],axis=1)
-        probs = out_mlp.apply(mlp_input)
+        probs = out_mlp.apply(mention_hidden)
         # Calculate prediction, cost and error rate
         pred = probs.argmax(axis=1)
         cost = Softmax().categorical_cross_entropy(label, probs).mean()
@@ -83,6 +71,8 @@ class Model():
         self.sgd_cost = cost
         self.monitor_vars = [[cost], [error_rate]]
         self.monitor_vars_valid = [[cost], [error_rate]]
+        self.pred = pred
+        self.error_rate = error_rate
 
         # Initialize bricks
         for brick in bricks:
@@ -95,14 +85,16 @@ def initialize_embed(config, dataset):
     embs = []
     with codecs.open(path,'r','UTF-8') as f:
         for line in f:
-            word = line.split(' ', 1)[0]
-            if word in word2id:
-                array = line.strip().split(' ')
-                if len(array) != config.embed_size + 1:
-                    raise Exception("Embedded dimension mismatch!")
-                    return None
-                vector = []
-                for i in range(1,len(array)):
-                    vector.append(float(array[i]))
-                embs += [(word2id[array[0]], numpy.asarray(vector, theano.config.floatX))]
+             for line in f:
+                word = line.split(' ', 1)[0]
+                if word in word2id:
+                    array = line.split(' ')
+                    if len(array) != config.embed_size + 1:
+                        return None
+                    vector = []
+                    for i in range(1,len(array)):
+                        vector.append(float(array[i]))
+                    embs += [(word2id[array[0]], numpy.asarray(vector, theano.config.floatX))]
     return embs
+
+#  vim: set sts=4 ts=4 sw=4 tw=0 et :

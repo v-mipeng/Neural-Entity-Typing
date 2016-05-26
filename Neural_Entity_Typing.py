@@ -25,7 +25,7 @@ except ImportError:
     print "No plotting extension available."
 
 import dataset
-from dataset import satori_multi
+from dataset import satori_multi_train as satori_multi
 from paramsaveload import SaveLoadParams
 
 logging.basicConfig(level='INFO')
@@ -38,8 +38,8 @@ if __name__ == "__main__":
     config = importlib.import_module('.%s' % model_name, 'config')
     # Build datastream
     data_path = config.data_path
-    train_path = os.path.join(data_path, "train")
-    valid_path = os.path.join(data_path, "valid")
+    train_path = os.path.join(data_path, "train/satori bbn and conll/")
+    valid_path = os.path.join(data_path, "valid/satori bbn and conll/")
 
     # Load word2id and word_freq dictionary
     word2id = None
@@ -57,18 +57,8 @@ if __name__ == "__main__":
                 array = line.split('\t')
                 word_freq[array[0]] = int(array[1])
     
-    # Load type2id
-    type2id = {}
-    if os.path.exists(config.type2id_path):
-        with codecs.open(config.type2id_path, "r", encoding = "UTF-8") as f:
-            for line in f:
-                array = line.split('\t')
-                type2id[array[0]] = int(array[1])
-    else:
-        raise Exception("type2id file not exists!")
-
     print("Loading training dataset...")
-    ds, train_stream = satori_multi.setup_datastream(train_path, config, type2id, word2id, word_freq)
+    ds, train_stream = satori_multi.setup_datastream(train_path, config, word2id, word_freq)
     print("Done!")
 
     # Save word2id and word_freq
@@ -84,9 +74,9 @@ if __name__ == "__main__":
                 f.write("%s\t%s\n" % (key, value))
 
     print("Loading validation dataset...")
-    _, valid_stream = satori_multi.setup_datastream(valid_path, config, type2id, word2id = word2id, word_freq = word_freq)
+    _, valid_stream = satori_multi.setup_datastream(valid_path, config, word2id = word2id, word_freq = word_freq)
     print("Done!")
-    dump_path = os.path.join(config.model_path, model_name+"_on_satori_bbn_and_conll_wiki.pkl")
+    dump_path = os.path.join(config.model_path, model_name+".pkl")
 
     # Build model
     m = config.Model(config, ds)
@@ -96,8 +86,7 @@ if __name__ == "__main__":
 
     algorithm = GradientDescent(cost=m.sgd_cost,
                                 step_rule=config.step_rule,
-                                parameters=model.parameters,
-                                on_unused_sources='ignore')
+                                parameters=model.parameters)
 
     #region Debug Theano Tensor Variable
 
@@ -145,7 +134,7 @@ if __name__ == "__main__":
             DataStreamMonitoring(
                 [v for l in m.monitor_vars_valid for v in l],
                 valid_stream,
-                before_first_epoch = False,
+#                before_first_epoch = False,
                 prefix='valid',
                 every_n_batches=config.valid_freq),
         ]
@@ -165,3 +154,4 @@ if __name__ == "__main__":
     # Run the model !
     main_loop.run()
     main_loop.profile.report()
+
