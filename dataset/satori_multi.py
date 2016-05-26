@@ -3,6 +3,7 @@ import logging
 import random
 import numpy
 import glob
+import theano
 
 import cPickle
 
@@ -18,6 +19,8 @@ import os
 import re
 import codecs
 from collections import OrderedDict
+
+from dbpedia import DBpedia
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -40,7 +43,7 @@ def stem(word):
     return word.encode('utf-8')
 
 class SatoriDataset(IndexableDataset):
-    def __init__(self, path, to_label_id, word2id, word_freq = None, **kwargs):
+    def __init__(self, path, to_label_id, type2id , word2id = None, word_freq = None, **kwargs):
         '''
         Construct database.
         File format should be : mention TAB type TAB  context
@@ -70,15 +73,23 @@ class SatoriDataset(IndexableDataset):
             self.count_word_freq()
         else:
             self.word_freq = word_freq
+        if type2id is None:
+            raise Exception("type2id cannot be None!")
+        self.dbpedia = DBpedia()
+        self.type2id = type2id
         self.to_label_id = to_label_id
         self._context = []
         self._mention_begin = []
         self._mention_end = []
+        self._type = []
+        self._type_weight = []
         self._label = []
+        self.type_size = len(self.type2id)
         self.load_data()
         self.vocab_size = len(self.word2id)
+        self.sources =('context', 'mention_begin', 'mention_end', 'type', 'type_weight', 'label')
         super(SatoriDataset, self).__init__(
-            indexables = OrderedDict([('context', self._context), ('mention_begin', self._mention_begin), ('mention_end', self._mention_end), ('label', self._label)]),
+            indexables = OrderedDict([('context', self._context), ('mention_begin', self._mention_begin), ('mention_end', self._mention_end), ('type', self._type),('type_weight', self._type_weight), ('label', self._label)]),
                                      **kwargs)
 
 
@@ -111,6 +122,7 @@ class SatoriDataset(IndexableDataset):
                                 print("Find error during counting word frequency!")
                             except:
                                 print("Find error during counting word frequency!")
+
     def load_data(self):
 
         def get_mention_index(context, mention):
@@ -152,10 +164,23 @@ class SatoriDataset(IndexableDataset):
                             self._label += [numpy.int32(self.to_label_id[array[1]])]
                         else:
                             continue
+
                         # Add begin_of_sentence label
                         contexts += [['<BOS>']+context]   
                         self._mention_begin += [numpy.int32(begin)]
                         self._mention_end += [numpy.int32(end)]
+
+                        # Extract mention matched types
+                        pairs = self.dbpedia.get_match_entities(array[0])
+                        if pairs is not None:
+                            types, indegrees = zip(*pairs)
+                            self._type += [numpy.array([self.type2id[type] for type in types], dtype="int32")]
+                            weights = [numpy.sqrt(indegree) for indegree in indegrees]  # log indegree
+                            s = sum(weights) # max normalization
+                            self._type_weight += [numpy.array([numpy.float32(weight/s) for weight in weights])]
+                        else:
+                            self._type += [numpy.array([self.type2id["UNKNOWN"]],dtype="int32")]
+                            self._type_weight += [numpy.array([1.0], dtype="float32")]
                     except Exception as e:
                         try:
                             print(e.message)
@@ -196,8 +221,8 @@ class _balanced_batch_helper(object):
     def __call__(self, data):
         return data[self.key].shape[0]  # sort key
 
-def setup_datastream(path, config, word2id = None, word_freq = None):
-    dataset = SatoriDataset(path = path, to_label_id = config.to_label_id, word2id = word2id, word_freq = word_freq)
+def setup_datastream(path, config, type2id, word2id = None, word_freq = None):
+    dataset = SatoriDataset(path = path, to_label_id = config.to_label_id, type2id = type2id, word2id = word2id, word_freq = word_freq)
     it = ShuffledExampleScheme(dataset.num_examples)
     stream = DataStream(dataset, iteration_scheme=it)
        
@@ -210,8 +235,11 @@ def setup_datastream(path, config, word2id = None, word_freq = None):
     # Add mask
     stream = Batch(stream, iteration_scheme=ConstantScheme(config.batch_size))
     stream = Padding(stream, mask_sources=['context'], mask_dtype='int32')
+    stream = Padding(stream, mask_sources=['type'], mask_dtype='int32')
+    stream = Padding(stream, mask_sources=['type_weight'], mask_dtype=theano.config.floatX)
     # Debug
-    for data in stream.get_epoch_iterator():
-        d = data
-        pass    
+    #for data in stream.get_epoch_iterator():
+    #    print(data[stream.sources.index("type")].shape)
+    #    print(data[stream.sources.index("type_weight")].shape)
+    #    raw_input("continue")  
     return dataset, stream

@@ -1,8 +1,3 @@
-'''
-Extract word embeddings from pre-trained google word2vec for given words
-'''
-import fileinput
-
 words = set()
 f= open(r"D:\Codes\Project\EntityTyping\Neural Entity Typing\input\tables\satori and bbn\word2id.txt","r")
 for line in f:
