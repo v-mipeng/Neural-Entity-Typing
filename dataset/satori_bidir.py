@@ -9,7 +9,7 @@ from picklable_itertools import iter_
 
 from fuel.datasets import Dataset, IndexableDataset
 from fuel.streams import DataStream
-from fuel.schemes import IterationScheme, ConstantScheme, IndexScheme, ShuffledExampleScheme
+from fuel.schemes import IterationScheme, ConstantScheme, IndexScheme, ShuffledExampleScheme, SequentialScheme
 from fuel.transformers import Batch, Mapping, SortMapping, Unpack, Padding, Transformer
 
 import sys
@@ -56,8 +56,8 @@ class SatoriDataset(IndexableDataset):
             with codecs.open(os.path.join(self.path, file), "r", "UTF-8") as f:
                 for line in f:
                     array = line.strip().split("\t")
-                    mention = array[0].split(",")                                 # get mention
-                    context = array[len(array)-1].split(" ")                                  # get context
+                    mention = array[0].split(",")
+                    context = array[len(array)-1].split(" ")
                     if self.extract_vocab:
                         for word in context:
                             if word not in self.word2id:
@@ -87,20 +87,7 @@ class SatoriDataset(IndexableDataset):
     def to_word_ids(self, context):
         return numpy.array([self.to_word_id(x) for x in context], dtype=numpy.int32)
 
-
-class SatoriShuffleScheme(IterationScheme):
-    requests_examples = True
-    def __init__(self, dataset_size, *args, **kwargs):
-        self.dataset_size = dataset_size
-        super(SatoriShuffleScheme, self).__init__(*args, **kwargs)
-
-    def get_request_iterator(self):
-        indexes = numpy.arange(self.dataset_size)
-        numpy.random.shuffle(indexes)
-        return iter_(indexes)
-
 # -------------- DATASTREAM SETUP --------------------
-
 
 class _balanced_batch_helper(object):
     def __init__(self, key):
@@ -110,40 +97,10 @@ class _balanced_batch_helper(object):
 
 def setup_datastream(path, config, word2id = None):
     dataset = SatoriDataset(path, config.to_label_id, word2id)
-    it = ShuffledExampleScheme(dataset.num_examples)
+    it = SequentialScheme(dataset.num_examples, config.batch_size)
     stream = DataStream(dataset, iteration_scheme=it)
-       
-    # Sort sets of multiple batches to make batches of similar sizes
-    stream = Batch(stream, iteration_scheme=ConstantScheme(config.batch_size * config.sort_batch_count))
-    comparison = _balanced_batch_helper(stream.sources.index('order_context'))
-    stream = Mapping(stream, SortMapping(comparison))
-    stream = Unpack(stream)
-
     # Add mask
-    stream = Batch(stream, iteration_scheme=ConstantScheme(config.batch_size))
     stream = Padding(stream, mask_sources=['order_context','reverse_context'], mask_dtype='int32')
 
     return dataset, stream
 
-if __name__ == "__main__":
-    # Test
-    class DummyConfig:
-        def __init__(self):
-            self.shuffle_entities = True
-            self.shuffle_questions = False
-            self.concat_ctx_and_question = False
-            self.concat_question_before = False
-            self.batch_size = 2
-            self.sort_batch_count = 1000
-
-    ds, stream = setup_datastream(os.path.join(os.getenv("DATAPATH"), "deepmind-qa/cnn/questions/training"),
-                                  os.path.join(os.getenv("DATAPATH"), "deepmind-qa/cnn/stats/training/vocab.txt"),
-                                  DummyConfig())
-    it = stream.get_epoch_iterator()
-
-    for i, d in enumerate(stream.get_epoch_iterator()):
-        print '--'
-        print d
-        if i > 2: break
-
-# vim: set sts=4 ts=4 sw=4 tw=0 et :

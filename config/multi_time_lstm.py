@@ -18,6 +18,11 @@ word_freq_path = os.path.join(basedir, "input/tables/satori bbn and conll/word f
 
 embed_path = os.path.join(basedir, "input/tables/word embedding.txt")
 
+type2id_path = os.path.join(basedir, "input/tables/type2id.txt")
+
+int_type = "int32"
+float_type = "float32"
+
 batch_size = 32
 sort_batch_count = 20
 
@@ -26,9 +31,11 @@ embed_size = 300
 lstm_time = 2
 lstm_size = 256
 
+type_embed_size = 100
+
 n_labels = 5
 
-step_rule = AdaDelta(0.95, 1e-6)
+step_rule = AdaDelta(decay_rate = 0.95, epsilon = 1e-06)
 
 dropout = 0.0
 w_noise = 0.00
