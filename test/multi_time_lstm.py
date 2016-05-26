@@ -33,7 +33,7 @@ if __name__ == "__main__":
     config = importlib.import_module('.%s' % model_name, 'config')
 
     # Build test datastream
-    test_path = os.path.join(config.data_path, "temp")
+    test_path = os.path.join(config.data_path, "temp/")
     # load word2id and word_freq
     if os.path.exists(config.word2id_path):
         word2id = {}
@@ -52,9 +52,19 @@ if __name__ == "__main__":
     else:
         raise("Cannot find word frequency file!")
 
+    # Load type2id
+    type2id = {}
+    if os.path.exists(config.type2id_path):
+        with codecs.open(config.type2id_path, "r", encoding = "UTF-8") as f:
+            for line in f:
+                array = line.split('\t')
+                type2id[array[0]] = int(array[1])
+    else:
+        raise Exception("type2id file not exists!")
+
     print("Loading test dataset...")
-    ds, test_stream = satori_multi.setup_datastream(test_path, config, word2id, word_freq)
-    model_path = os.path.join(config.model_path, model_name+"_on_satori_and_bbn.pkl")
+    ds, test_stream = satori_multi.setup_datastream(test_path, config,type2id, word2id, word_freq)
+    model_path = os.path.join(config.model_path, model_name+"_on_satori_bbn_and_conll_wiki_copy.pkl")
     
     # Build model
     m = config.Model(config, ds)
@@ -73,8 +83,8 @@ if __name__ == "__main__":
     f_error_rate = theano.function(cg.inputs, m.error_rate)
     error_rate_inputs = cg.inputs
 
-    # Do prediction and write the result to file
-    des = str("./output/result/%s on newoffering.txt" % model_name)
+   # Do prediction and write the result to file
+    des = str("./output/result/train on satori bbn conll and wiki/%s test on labelled samples.txt" % model_name)
     writer = codecs.open(des,"w+")
     label2id = config.to_label_id
     id2label = {
@@ -94,15 +104,19 @@ if __name__ == "__main__":
         label_ids = f_pred(inputs[test_stream.sources.index(pred_inputs[0].name)],
                            inputs[test_stream.sources.index(pred_inputs[1].name)],
                            inputs[test_stream.sources.index(pred_inputs[2].name)],
-                           inputs[test_stream.sources.index(pred_inputs[3].name)])
+                           inputs[test_stream.sources.index(pred_inputs[3].name)],
+                           inputs[test_stream.sources.index(pred_inputs[4].name)],
+                           inputs[test_stream.sources.index(pred_inputs[5].name)])
         error_rate += f_error_rate(inputs[test_stream.sources.index(error_rate_inputs[0].name)],
                                   inputs[test_stream.sources.index(error_rate_inputs[1].name)],
                                   inputs[test_stream.sources.index(error_rate_inputs[2].name)],
                                   inputs[test_stream.sources.index(error_rate_inputs[3].name)],
-                                  inputs[test_stream.sources.index(error_rate_inputs[4].name)])*input_len
+                                  inputs[test_stream.sources.index(error_rate_inputs[4].name)],
+                                  inputs[test_stream.sources.index(error_rate_inputs[5].name)],
+                                  inputs[test_stream.sources.index(error_rate_inputs[6].name)],)*input_len
         samples += input_len
         for true_label_id, label_id, mention, context in zip(inputs[test_stream.sources.index("label")],label_ids, ds.mention[offset:offset+input_len], ds.context[offset:offset+input_len]):
-            writer.write("%s\t%s\t%s\t%s\n" % (" ".join(mention),id2label[int(true_label_id)],id2label[label_id], " ".join(context)))
+            writer.write("%s\t%s\t%s\t%s\n" % (mention,id2label[int(true_label_id)],id2label[label_id], context))
         offset = offset+input_len
     writer.write("Error rate: %s" % (error_rate/samples))
     writer.close()
