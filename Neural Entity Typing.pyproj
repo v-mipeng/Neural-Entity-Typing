@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3ebda6c3-5f65-4272-9d9c-a84a0d1b5935</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Neural_Entity_Typing.py</StartupFile>
+    <StartupFile>Test.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -30,12 +30,11 @@
     <Compile Include="dataset\dbpedia.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="dataset\satori_multi.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="dataset\satori_bidir.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="dataset\satori_multi_test.py" />
+    <Compile Include="dataset\satori_multi_train.py" />
     <Compile Include="dataset\__init__.py" />
     <Compile Include="model\deep_bidir_lstm.py" />
     <Compile Include="model\deep_lstm.py" />
@@ -50,6 +49,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Neural_Entity_Typing.py" />
+    <Compile Include="script\analyze\comp_results_script.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="script\analyze\config.py" />
     <Compile Include="script\analyze\sample_num_script.py" />
     <Compile Include="script\analyze\__init__.py" />
@@ -67,6 +69,8 @@
     <Compile Include="Test.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="test\deep_bidir_lstm.py" />
+    <Compile Include="test\multi_time_lstm.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="dataset\" />
@@ -74,9 +78,7 @@
     <Folder Include="config\" />
     <Folder Include="script\" />
     <Folder Include="script\analyze\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="script\analyze\config.pyc" />
+    <Folder Include="test\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
