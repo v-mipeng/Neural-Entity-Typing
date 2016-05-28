@@ -15,7 +15,7 @@ from blocks.initialization import Constant, IsotropicGaussian, Orthogonal
 
 
 class Model():
-    def __init__(self, config, dataset):
+    def __init__(self, config, vocab_size):
         context = tensor.imatrix('context')                                 # shape: batch_size*sequence_length
         context_mask = tensor.imatrix('context_mask')
         mention_begin = tensor.ivector('mention_begin')
@@ -29,9 +29,8 @@ class Model():
         context_mask = context_mask.dimshuffle(1, 0)
 
         # Embed contexts
-        embed = Lookup(dataset.vocab_size, config.embed_size, name='word_embed')
-        embs = initialize_embed(config, dataset)
-        embed.initialize_with_pretrain(embs)                    # initialize embeding table with pre-traing values
+        embed = LookupTable(vocab_size, config.embed_size, name='word_embed')
+
         # Apply embedding
         context_embed = embed.apply(context)
 
@@ -79,22 +78,3 @@ class Model():
             brick.biases_init = Constant(0)
             brick.initialize()
 
-def initialize_embed(config, dataset):
-    path = config.embed_path
-    word2id = dataset.word2id
-    embs = []
-    with codecs.open(path,'r','UTF-8') as f:
-        for line in f:
-             for line in f:
-                word = line.split(' ', 1)[0]
-                if word in word2id:
-                    array = line.split(' ')
-                    if len(array) != config.embed_size + 1:
-                        return None
-                    vector = []
-                    for i in range(1,len(array)):
-                        vector.append(float(array[i]))
-                    embs += [(word2id[array[0]], numpy.asarray(vector, theano.config.floatX))]
-    return embs
-
-#  vim: set sts=4 ts=4 sw=4 tw=0 et :

@@ -86,7 +86,8 @@ if __name__ == "__main__":
 
     algorithm = GradientDescent(cost=m.sgd_cost,
                                 step_rule=config.step_rule,
-                                parameters=model.parameters)
+                                parameters=model.parameters,
+                                on_unused_sources='ignore')
 
     #region Debug Theano Tensor Variable
 
