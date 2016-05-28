@@ -22,21 +22,21 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="config\deep_bidir_lstm.py" />
     <Compile Include="config\multi_time_lstm.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="config\__init__.py" />
+    <Compile Include="dataset\english_script.py" />
+    <Compile Include="dataset\hypen_script.py" />
+    <Compile Include="dataset\ner.py" />
+    <Compile Include="dataset\json_script.py" />
+    <Compile Include="dataset\label_script.py" />
     <Compile Include="dataset\multi_pred.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="dataset\satori_multi.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="dataset\satori_bidir.py">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="dataset\satori_multi_pred.py" />
     <Compile Include="dataset\__init__.py" />
+    <Compile Include="main.py" />
     <Compile Include="script\label_script.py">
       <SubType>Code</SubType>
     </Compile>
@@ -52,9 +52,6 @@
     <Compile Include="script\web\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="test\deep_bidir_lstm.py" />
-    <Compile Include="model\deep_bidir_lstm.py" />
-    <Compile Include="model\deep_lstm.py" />
     <Compile Include="model\multi_time_lstm.py">
       <SubType>Code</SubType>
     </Compile>
@@ -65,7 +62,6 @@
     <Compile Include="paramsaveload.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Neural_Entity_Typing.py" />
     <Compile Include="script\config.py" />
     <Compile Include="script\english_script.py" />
     <Compile Include="script\format_script.py" />
@@ -76,11 +72,7 @@
     <Compile Include="script\sym_script.py" />
     <Compile Include="script\tokenize_script.py" />
     <Compile Include="script\__init__.py" />
-    <Compile Include="Test.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="predict\multi_time_lstm.py" />
-    <Compile Include="test\multi_time_lstm.py" />
+    <Compile Include="predictor.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="dataset\" />
@@ -89,7 +81,6 @@
     <Folder Include="predict\" />
     <Folder Include="script\" />
     <Folder Include="script\web\" />
-    <Folder Include="test\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

@@ -13,6 +13,7 @@ from nltk.tokenize.punkt import PunktSentenceTokenizer
 from blocks.graph import ComputationGraph
 from blocks.model import Model
 
+import dataset.satori_multi_pred as pred
 
 try:
     from blocks_extras.extensions.plot import Plot
@@ -22,7 +23,6 @@ except ImportError:
     print "No plotting extension available."
 
 
-from dataset import multi_pred
 from paramsaveload import SaveLoadParams
 
 logging.basicConfig(level='INFO')
@@ -44,6 +44,7 @@ if os.path.exists(config.word2id_path):
             word2id[array[0]] = int(array[1])
 else:
     raise("Cannot find vocabulary file!")
+
 if os.path.exists(config.word_freq_path):
     word_freq = {}
     with codecs.open(config.word_freq_path, "r", encoding = "UTF-8") as f:
@@ -53,7 +54,7 @@ if os.path.exists(config.word_freq_path):
 else:
     raise("Cannot find word frequency file!")
 
-model_path = os.path.join(config.model_path, model_name+"_gpu.pkl")
+model_path = os.path.join(config.model_path, model_name+".pkl")
     
 # Build model
 m = config.Model(config, len(word2id))
@@ -61,7 +62,7 @@ cg = ComputationGraph(m.sgd_cost)
 
 # Initialize
 model = Model(m.sgd_cost)   
-initializer = SaveLoadParams(model_path,model)
+initializer = SaveLoadParams(model_path, model)
 initializer.do_load()
     
 # Build predictor
@@ -75,8 +76,7 @@ id2label = {}
 for item in label2id.items():
     id2label[item[1]] = item[0]
 
-
-def predict(char_begins, char_ends, contexts):
+def predict(samples):
     '''
     Predict type of mentions.
 
@@ -88,28 +88,22 @@ def predict(char_begins, char_ends, contexts):
 
     @return a list string 
     '''
-    ds, stream = multi_pred.setup_datastream(char_begins, char_ends, contexts, word2id, word_freq)
+    ds, stream = pred.setup_datastream(samples, config, word2id, word_freq)
     labels = ds.label
     offset = 0
     for inputs in stream.get_epoch_iterator():
         input_len = len(inputs[stream.sources.index(pred_inputs[0].name)])
 
         label_ids = f_pred(inputs[stream.sources.index(pred_inputs[0].name)],
-                            inputs[stream.sources.index(pred_inputs[1].name)],
-                            inputs[stream.sources.index(pred_inputs[2].name)])
+                           inputs[stream.sources.index(pred_inputs[1].name)],
+                           inputs[stream.sources.index(pred_inputs[2].name)],
+                           inputs[stream.sources.index(pred_inputs[3].name)])
         for label_id in label_ids:
-            while labels[offset] == "UNKNOWN":
+            while labels[offset] is not None:
                 offset += 1
             labels[offset] = id2label[label_id]
             offset += 1
-    return labels
+    return ds.mention, ds.context, labels
 
-def predict(mentions, contexts):
-    char_begins = []
-    for mention,context in zip(mentions,contexts):
-        begin = context.find(mention)
-        end = begin + len(begin)
-        char_begins += [begin]
-        char_ends += [end]
-    predict(char_begins,char_ends,contexts)
+
 
