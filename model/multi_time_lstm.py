@@ -85,6 +85,8 @@ class Model():
         self.monitor_vars_valid = [[cost], [error_rate]]
         self.error_rate = error_rate
         self.pred = pred
+        self.probs = probs
+
         # Initialize bricks
         for brick in bricks:
             brick.biases_init = Constant(0)

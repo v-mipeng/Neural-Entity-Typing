@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -27,15 +27,14 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="config\__init__.py" />
-    <Compile Include="dataset\multi_pred.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="dataset\satori_multi.py">
+    <Compile Include="dataset\dbpedia.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="dataset\satori_bidir.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="dataset\satori_multi_test.py" />
+    <Compile Include="dataset\satori_multi_train.py" />
     <Compile Include="dataset\__init__.py" />
     <Compile Include="script\web\entity_linking_api.py">
       <SubType>Code</SubType>
@@ -63,8 +62,15 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Neural_Entity_Typing.py" />
+    <Compile Include="script\analyze\comp_results_script.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="script\analyze\config.py" />
+    <Compile Include="script\analyze\sample_num_script.py" />
+    <Compile Include="script\analyze\__init__.py" />
     <Compile Include="script\config.py" />
     <Compile Include="script\english_script.py" />
+    <Compile Include="script\ext_emb_script.py" />
     <Compile Include="script\format_script.py" />
     <Compile Include="script\freq_script.py" />
     <Compile Include="script\hypen_script.py" />
@@ -86,6 +92,7 @@
     <Folder Include="predict\" />
     <Folder Include="script\" />
     <Folder Include="script\web\" />
+    <Folder Include="script\analyze\" />
     <Folder Include="test\" />
   </ItemGroup>
   <PropertyGroup>

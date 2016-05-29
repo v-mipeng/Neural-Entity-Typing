@@ -11,3 +11,4 @@ with open(r"D:\Data\Google-word2vec\GoogleNews-vectors-negative300.txt","r") as 
 writer.close()
     
 
+
