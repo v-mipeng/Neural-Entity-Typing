@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3ebda6c3-5f65-4272-9d9c-a84a0d1b5935</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>script\label_script.py</StartupFile>
+    <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,65 +22,76 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="config\multi_time_lstm.py">
+    <Compile Include="main.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="config\__init__.py" />
-    <Compile Include="dataset\english_script.py" />
-    <Compile Include="dataset\hypen_script.py" />
-    <Compile Include="dataset\ner.py" />
-    <Compile Include="dataset\json_script.py" />
-    <Compile Include="dataset\label_script.py" />
-    <Compile Include="dataset\multi_pred.py">
+    <Compile Include="source\config\multi_time_lstm.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="dataset\satori_multi_pred.py" />
-    <Compile Include="dataset\__init__.py" />
-    <Compile Include="main.py" />
-    <Compile Include="script\label_script.py">
+    <Compile Include="source\config\__init__.py" />
+    <Compile Include="source\dataset\base.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="script\web\entity_linking_api.py">
+    <Compile Include="source\dataset\error.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="script\web\json_script.py">
+    <Compile Include="source\dataset\multi_time_lstm.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="script\web\test.py">
+    <Compile Include="source\dataset\__init__.py" />
+    <Compile Include="source\ensemble.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="script\web\__init__.py">
+    <Compile Include="source\entrance\base.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="model\multi_time_lstm.py">
+    <Compile Include="source\entrance\multi_time_lstm.py" />
+    <Compile Include="source\entrance\__init__.py" />
+    <Compile Include="source\model\multi_time_lstm.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="model\word_emb.py">
+    <Compile Include="source\model\word_emb.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="model\__init__.py" />
-    <Compile Include="paramsaveload.py">
+    <Compile Include="source\model\__init__.py" />
+    <Compile Include="source\paramsaveload.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="script\config.py" />
-    <Compile Include="script\english_script.py" />
-    <Compile Include="script\format_script.py" />
-    <Compile Include="script\freq_script.py" />
-    <Compile Include="script\hypen_script.py" />
-    <Compile Include="script\len_script.py" />
-    <Compile Include="script\mask_script.py" />
-    <Compile Include="script\sym_script.py" />
-    <Compile Include="script\tokenize_script.py" />
-    <Compile Include="script\__init__.py" />
-    <Compile Include="predictor.py" />
+    <Compile Include="source\resource\dbpedia.py" />
+    <Compile Include="source\resource\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="source\script\analyze\comp_results_script.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="source\script\analyze\config.py" />
+    <Compile Include="source\script\analyze\sample_num_script.py" />
+    <Compile Include="source\script\analyze\__init__.py" />
+    <Compile Include="source\script\config.py" />
+    <Compile Include="source\script\english_script.py" />
+    <Compile Include="source\script\ext_emb_script.py" />
+    <Compile Include="source\script\format_script.py" />
+    <Compile Include="source\script\freq_script.py" />
+    <Compile Include="source\script\hypen_script.py" />
+    <Compile Include="source\script\len_script.py" />
+    <Compile Include="source\script\mask_script.py" />
+    <Compile Include="source\script\sym_script.py" />
+    <Compile Include="source\script\tokenize_script.py" />
+    <Compile Include="source\script\__init__.py" />
+    <Compile Include="source\Test.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="dataset\" />
-    <Folder Include="model\" />
-    <Folder Include="config\" />
-    <Folder Include="predict\" />
-    <Folder Include="script\" />
-    <Folder Include="script\web\" />
+    <Folder Include="source\dataset\" />
+    <Folder Include="source\entrance\" />
+    <Folder Include="source\model\" />
+    <Folder Include="source\config\" />
+    <Folder Include="source\" />
+    <Folder Include="resource\" />
+    <Folder Include="source\resource\" />
+    <Folder Include="source\script\" />
+    <Folder Include="source\script\analyze\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
