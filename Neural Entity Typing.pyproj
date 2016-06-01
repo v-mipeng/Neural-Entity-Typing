@@ -38,9 +38,6 @@
     <Compile Include="source\dataset\multi_time_lstm.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="resource\dbpedia.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="source\dataset\__init__.py" />
     <Compile Include="source\ensemble.py">
       <SubType>Code</SubType>
