@@ -1,11 +1,11 @@
 import sys
 sys.path.append("./source")
-from entrance.multi_time_lstm import MTLE
+from entrance.multi_time_lstm import MTLDE
 
-model = MTLE()
+model = MTLDE()
 
 # Train model with default training dataset
-model.train(train_path = None, valid_portion = None, model_path = None)
+model.train(train_path = None, valid_portion = None, valid_path = None, model_path = None)
 
 # Test on default dataset
 #model.test(test_path = None, test_result_path = None, model_path = None)

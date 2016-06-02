@@ -2,6 +2,7 @@
 import logging
 import random
 import numpy
+import theano
 
 import cPickle
 from picklable_itertools import iter_
@@ -26,11 +27,12 @@ from error import *
 from resource.dbpedia import DBpedia
 from error import *
 import time
+from __builtin__ import super
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
-class BasicDataset():
+class BasicDataset(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
@@ -69,6 +71,7 @@ class MTL(BasicDataset):
         self.regex3 = re.compile(r"[A-Z]+")
         self.regex4 = re.compile(r"[a-z]+")
         self.regex5 = re.compile(r"\d+")
+
     def get_train_stream(self, data_path, valid_portion = 0.0):
         '''
         Load dataset from given data_path, and split it into training dataset and validation dataset.
@@ -88,24 +91,15 @@ class MTL(BasicDataset):
         if self.word2id is None:
             self.get_word2id(data_path)
             self.save_word2id()
-        t1 = time.time()
         dataset = self.load_dataset(data_path)
-        t2 = time.time()
-        print("Elapased % seconds for loading dataset" %(t2-t1))
-        t1 = time.time()
         assert valid_portion < 1
         if valid_portion > 0:
             #Split dataset into training set and validation dataset
             train_data, valid_data = split_train_valid(dataset, valid_portion)
-            t2 = time.time()
-            print("Elapased % seconds for split dataset" %(t2-t1))
-            t1 = time.time()
             train_ds = self.construct_dataset(train_data)
             valid_ds = self.construct_dataset(valid_data)
             train_stream = self.construct_shuffled_stream(train_ds)
             valid_stream = self.construct_sequencial_stream(valid_ds)
-            t2 = time.time()
-            print("Elapased % seconds for construct data stream" %(t2-t1))
             return train_stream, valid_stream
         else:
             train_ds = self.construct_dataset(dataset)
@@ -192,7 +186,7 @@ class MTL(BasicDataset):
             with codecs.open(os.path.join(data_path, file), "r", "UTF-8", errors = "ignore") as f:
                 for line in f:
                     try:
-                        dataset.append(self.parse_one_sample(line, with_label))
+                        dataset.append(self.parse_one_sample(line.strip(), with_label))
                     except MentionNotFoundError:
                         continue
                     except Exception as e:
@@ -210,10 +204,10 @@ class MTL(BasicDataset):
         '''
         if self.config.develop: # Assuming that during developing, all the data has been pre-processed                
             array = line.split('\t')
-            mention_tokens = tokenize(array[0])                                
-            context_tokens = tokenize(array[len(array)-1])
+            mention_tokens = array[0].split(' ')
+            context_tokens = array[len(array)-1].split(' ')
         else:
-            line = split_hyphen(line.strip())
+            line = split_hyphen(line)
             array = line.split("\t")
             mention = array[0]
             context = array[len(array)-1]
@@ -235,20 +229,20 @@ class MTL(BasicDataset):
         for i in range(len(context_tokens)):
             word = context_tokens[i].decode('utf-8').lower()
             if i >= begin and i < end:
-                if (word not in self.word_freq) or (self.word_freq[word] < 50):
+                if (word not in self.word_freq) or (self.word_freq[word] < self.config.sparse_mention_threshold):
                     context_tokens[i] = self.stem(context_tokens[i])                         
-            elif (word not in self.word_freq) or (self.word_freq[word] < 10):
+            elif (word not in self.word_freq) or (self.word_freq[word] < self.config.sparse_word_threshold):
                 context_tokens[i] = self.stem(context_tokens[i])                         
         for i in range(len(mention_tokens)):
             word = mention_tokens[i].decode('utf-8').lower()
-            if (word not in self.word_freq) or (self.word_freq[word] < 50):
+            if (word not in self.word_freq) or (self.word_freq[word] < self.config.sparse_mention_threshold):
                 mention_tokens[i] = self.stem(mention_tokens[i])
         # Add begin_of_sentence label
         _context = self.to_word_ids(['<BOS>']+context_tokens)
         _mention_begin = numpy.int32(begin).astype(self.config.int_type)
         _mention_end = numpy.int32(end).astype(self.config.int_type)
-        mention = array[0]
-        context = array[len(array)-1]
+        mention = " ".join(mention_tokens)
+        context = " ".join(context_tokens)
         if with_label:
             return (_context, _mention_begin, _mention_end, _label, mention, context)
         else:
@@ -258,7 +252,6 @@ class MTL(BasicDataset):
         '''
         Construct word2id table.
         '''
-
         if os.path.isdir(data_path):
             files = [f for f in os.listdir(data_path) if f.endswith('.txt')]
         else:
@@ -268,30 +261,49 @@ class MTL(BasicDataset):
         self.word2id['<UNK>'] = len(self.word2id)
         self.word2id['<BOS>'] = len(self.word2id)
         for file in files:
-            if os.path.isfile(os.path.join(data_path, file)):
-                with codecs.open(os.path.join(data_path, file),"r", "UTF-8", errors = "ignore") as f:
-                    for line in f:
+            with codecs.open(os.path.join(data_path, file),"r", "UTF-8", errors = "ignore") as f:
+                for line in f:
+                    try:
+                        line = line.strip()
+                        if self.config.develop: # Assuming that during developing, all the data has been pre-processed                
+                            array = line.split('\t')
+                            mention_tokens = array[0].split(' ')                               
+                            context_tokens = array[len(array)-1].split(' ')
+                        else:
+                            line = split_hyphen(line)
+                            array = line.split("\t")
+                            mention = array[0]
+                            context = array[len(array)-1]
+                            char_begin = context.find(mention)
+                            if char_begin == -1:
+                                raise MentionNotFoundError()
+                            context = filter_context(char_begin, char_begin+len(mention), context)
+                            mention_tokens = tokenize(mention)                                
+                            context_tokens = tokenize(context)
+                        begin, end = get_mention_index(context_tokens,mention_tokens)
+                        if begin < 0:
+                            continue
+                        for i in range(len(context_tokens)):
+                            word = context_tokens[i].decode('utf-8').lower()
+                            if i >= begin and i < end:
+                                if (word not in self.word_freq) or (self.word_freq[word] < self.config.sparse_mention_threshold):
+                                    context_tokens[i] = self.stem(context_tokens[i])                         
+                            elif (word not in self.word_freq) or (self.word_freq[word] < self.config.sparse_word_threshold):
+                                    context_tokens[i] = self.stem(context_tokens[i])    
+                        for word in context_tokens:
+                            if word not in self.word2id:
+                                self.word2id[word] = len(self.word2id)
+                    except Exception as e:
                         try:
-                            contexts = line.strip().split('\t')[2].split(' ')
-                            for i in range(len(contexts)):
-                                word = contexts[i].decode('utf-8').lower()
-                                if (word not in self.word_freq) or (self.word_freq[word] < 10):
-                                    contexts[i] = self.stem(contexts[i])
-                            for word in contexts:
-                                if word not in self.word2id:
-                                    self.word2id[word] = len(self.word2id)
-                        except Exception as e:
-                            try:
-                                print(e.message)
-                                print("Find error during construct word2id table!")
-                            except:
-                                print("Find error during construct word2id table!")
+                            print(e.message)
+                            print("Find error during construct word2id table!")
+                        except:
+                            print("Find error during construct word2id table!")
 
     def get_word_freq(self, data_path):
         '''
         Count word frequency.
         '''
-        print(os.path.abspath(data_path))
         if os.path.isdir(data_path):
             files = [f for f in os.listdir(data_path) if f.endswith('.txt')]
         else:
@@ -299,23 +311,31 @@ class MTL(BasicDataset):
             files = [file]
         self.word_freq = dict()
         for file in files:
-            if os.path.isfile(os.path.join(data_path, file)):
-                with codecs.open(os.path.join(data_path, file),"r", "UTF-8", errors = "ignore") as f:
-                    for line in f:
+            with codecs.open(os.path.join(data_path, file),"r", "UTF-8", errors = "ignore") as f:
+                for line in f:
+                    try:
+                        line = line.strip()
+                        if self.config.develop: # Assuming that during developing, all the data has been pre-processed                
+                            array = line.split('\t')
+                            context_tokens = array[len(array)-1].split(' ')
+                        else:
+                            line = split_hyphen(line)
+                            array = line.split("\t")
+                            context = array[len(array)-1]
+                            context_tokens = tokenize(context)
+
+                        for word in context_tokens:
+                            word = word.decode('utf-8').lower()
+                            if word in self.word_freq:
+                                self.word_freq[word] += 1
+                            else:
+                                self.word_freq[word] = 1
+                    except Exception as e:
                         try:
-                            contexts = line.strip().split('\t')[2].split(' ')
-                            for word in contexts:
-                                word = word.decode('utf-8').lower()
-                                if word in self.word_freq:
-                                    self.word_freq[word] += 1
-                                else:
-                                    self.word_freq[word] = 1
-                        except Exception as e:
-                            try:
-                                print(e.message)
-                                print("Find error during counting word frequency!")
-                            except:
-                                print("Find error during counting word frequency!")
+                            print(e.message)
+                            print("Find error during counting word frequency!")
+                        except:
+                            print("Find error during counting word frequency!")
 
     def stem(self, word):
         if len(self.regex1.findall(word)) > 0:
@@ -359,12 +379,12 @@ class MTLD(MTL):
         '''
         super(MTLD, self).__init__(config)
         self.dbpedia = DBpedia()
-        self.provide_souces = ('context', 'mention_begin', 'mention_end', 'type', 'type_weight', 'label')
         self.type2id = None
         if os.path.exists(config.type2id_path):
             self.load_type2id()
         else:
             raise Exception("Type2id cannot be None!")
+        self.provide_souces = ('context', 'mention_begin', 'mention_end', 'type', 'type_weight', 'label')
 
     def parse_one_sample(self, line, with_label = True):
         # Extract mention matched types
@@ -373,14 +393,28 @@ class MTLD(MTL):
         pairs = self.dbpedia.get_match_entities(mention)
         if pairs is not None:
             types, indegrees = zip(*pairs)
-            _type = numpy.array([self.type2id[type] for type in types], dtype="int32")
+            _type = numpy.array([self.type2id[type] for type in types], self.config.int_type)
             weights = [numpy.sqrt(indegree) for indegree in indegrees]  # log indegree
             s = sum(weights) # max normalization
-            _type_weight = numpy.array([numpy.float32(weight/s) for weight in weights])
+            _type_weight = numpy.array([weight/s for weight in weights], dtype = theano.config.floatX)
         else:
-            _type = numpy.array([self.type2id["UNKNOWN"]],dtype="int32")
-            _type_weight = numpy.array([1.0], dtype="float32")
+            _type = numpy.array([self.type2id["UNKNOWN"]],dtype= self.config.int_type)
+            _type_weight = numpy.array([1.0], dtype= theano.config.floatX)
         return sample[0:3]+ (_type, _type_weight) + sample[3:]
 
     def load_type2id(self):
         self.type2id = load_dic(self.config.type2id_path)
+
+    def construct_shuffled_stream(self, dataset):
+        # Add mask
+        stream = super(MTLD, self).construct_shuffled_stream(dataset)
+        stream = Padding(stream, mask_sources=['type'], mask_dtype= self.config.int_type)
+        stream = Padding(stream, mask_sources=['type_weight'], mask_dtype= theano.config.floatX)
+        return stream
+
+    def construct_sequencial_stream(self, dataset):
+        # Add mask
+        stream = super(MTLD, self).construct_sequencial_stream(dataset)
+        stream = Padding(stream, mask_sources=['type'], mask_dtype= self.config.int_type)
+        stream = Padding(stream, mask_sources=['type_weight'], mask_dtype= theano.config.floatX)
+        return stream

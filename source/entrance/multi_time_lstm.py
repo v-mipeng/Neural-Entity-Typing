@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 sys.setrecursionlimit(2000000)
 
-class BasicEntrance:
+class BasicEntrance(object):
     __metaclass__ = ABCMeta
     
     @abstractmethod
@@ -54,8 +54,8 @@ class MTLE(BasicEntrance):
     Entrance of multiple time LSTM system
     '''
     def __init__(self):
-        self.config = MTLC()
-        self.ds = MTL(self.config)  # May does not exist word2id and word_freq
+        self.config = None
+        self.ds = None
         self.model = None
         self.model_path = None
         self.f_pred = None
@@ -67,8 +67,13 @@ class MTLE(BasicEntrance):
                     3:"person",
                     4:"product"
                 }
+        self.init_ds()
+    
+    def init_ds(self):
+        self.config = MTLC()
+        self.ds = MTL(self.config)
 
-    def train(self, train_path = None, valid_portion = None, model_path = None):
+    def train(self, train_path = None, valid_portion = None, valid_path =None, model_path = None):
         '''
         Train a multi_time_lstm model with given training dataset or the default dataset which is defined with config.multi_time_lstm.BasicConfig.train_path
 
@@ -77,6 +82,9 @@ class MTLE(BasicEntrance):
 
         @param valid_portion: a float value define the portion of validation, default: config.multi_time_lstm.MLTC.valid_portion
                               size of validation dataset: all_the_sample_num * valid_portion
+
+        @param valid_path: path of the validation dataset, file or directory, if given, the valid_portion will be 0.
+                           
 
         @param model_path: path to dump the trained model, default: config.multi_time_lstm module.model_path
         '''
@@ -89,12 +97,15 @@ class MTLE(BasicEntrance):
             self.model_path = model_path
         assert valid_portion >= 0 and valid_portion < 1.0
 
-        train_stream, valid_stream = self.ds.get_train_stream(train_path, valid_portion)
-
+        if valid_path is None:
+            train_stream, valid_stream = self.ds.get_train_stream(train_path, valid_portion)
+        else:
+            train_stream = self.ds.get_train_stream(train_path, 0.0)
+            valid_stream = self.ds.get_train_stream(valid_path, 0.0)
             
         # Build the Blocks stuff for training
         if self.m is None:
-            self.m = self.config.Model(self.config, self.ds.word2id) # with word2id
+            self.m = self.config.Model(self.config, self.ds) # with word2id
         if self.model is None:
             self.model = Model(self.m.sgd_cost) 
 
@@ -241,7 +252,7 @@ class MTLE(BasicEntrance):
 
     def init_model(self, model_path):
         if self.m is None:
-            self.m = self.config.Model(self.config, self.ds.word2id) # with word2id
+            self.m = self.config.Model(self.config, self.ds) # with word2id
         model = Model(self.m.sgd_cost)   
         initializer = SaveLoadParams(model_path, model)
         initializer.do_load()
@@ -253,7 +264,9 @@ class MTLDE(MTLE):
     Entrance of Multiple_Time_LSTM_with_DBpedia system
     '''
     def __init__(self):
+        super(MTLDE, self).__init__()
+        self.init_ds()
+
+    def init_ds(self):
         self.config = MTLDC()
         self.ds = MTLD(self.config)
-        super(MTLDE, self).__init__()
-

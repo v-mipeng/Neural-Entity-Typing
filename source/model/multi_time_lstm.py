@@ -15,7 +15,7 @@ from blocks.initialization import Constant, IsotropicGaussian, Orthogonal
 
 
 class MTLM():
-    def __init__(self, config, word2id = None):
+    def __init__(self, config, dataset):
         context = tensor.imatrix('context')                                 # shape: batch_size*sequence_length
         context_mask = tensor.imatrix('context_mask')
         mention_begin = tensor.ivector('mention_begin')
@@ -28,8 +28,8 @@ class MTLM():
         context_mask = context_mask.dimshuffle(1, 0)
 
         # Initialize embedding
-        embed = Lookup(len(word2id), config.embed_size, name='word_embed')
-        embs = initialize_embed(config, word2id)
+        embed = Lookup(len(dataset.word2id), config.embed_size, name='word_embed')
+        embs = initialize_embed(config, dataset.word2id)
         embed.initialize_with_pretrain(embs)                    # initialize embeding table with pre-traing values
         # Embed contexts
         context_embed = embed.apply(context)
@@ -83,7 +83,7 @@ class MTLDM():
         context = tensor.imatrix('context')                                 # shape: batch_size*sequence_length
         context_mask = tensor.imatrix('context_mask')
         type = tensor.imatrix('type')
-        type_weight = tensor.matrix('type_weight', dtype="float32")
+        type_weight = tensor.matrix('type_weight', dtype=theano.config.floatX)
         mention_begin = tensor.ivector('mention_begin')
         mention_end = tensor.ivector('mention_end')
         label = tensor.ivector('label')
@@ -95,12 +95,12 @@ class MTLDM():
         context_mask = context_mask.dimshuffle(1, 0)
 
         # Embed contexts
-        embed = Lookup(dataset.vocab_size, config.embed_size, name='word_embed')
-        embs = initialize_embed(config, dataset)
+        embed = Lookup(len(dataset.word2id), config.embed_size, name='word_embed')
+        embs = initialize_embed(config, dataset.word2id)
         embed.initialize_with_pretrain(embs)                    # initialize embeding table with pre-traing values
 
         # Embed types
-        type_lookup = LookupTable(dataset.type_size, config.type_embed_size, name="type_embed")
+        type_lookup = LookupTable(len(dataset.type2id), config.type_embed_size, name="type_embed")
         type_lookup.weights_init = IsotropicGaussian(std= 1/numpy.sqrt(config.type_embed_size))
         type_lookup.initialize()
         type_embed = (type_lookup.apply(type)*type_weight[:,:,None]).sum(axis=1)

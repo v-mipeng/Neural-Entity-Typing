@@ -36,6 +36,10 @@ class BasicConfig:
 
     int_type = "int32"
 
+    sparse_word_threshold = 10
+
+    sparse_mention_threshold = 50
+
     batch_size = 32
     sort_batch_count = 20
 
@@ -75,12 +79,9 @@ class BasicConfig:
 class MTLC(BasicConfig):
     Model = MTLM
 
-    basedir = "MTLC"
  
 class MTLDC(BasicConfig):
     Model = MTLDM
-
-    basedir = "MTLDC"
 
     develop = True
 

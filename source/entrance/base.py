@@ -1,5 +1,6 @@
 import os
 import codecs
+import ntpath
 
 def get_in_out_files(input_path, output_path):
     input_files = []
