@@ -4,6 +4,7 @@ import theano.tensor as tensor
 from blocks.bricks.lookup import LookupTable
 from blocks.initialization import IsotropicGaussian
 
+
 class Lookup(LookupTable):
     def __init__(self, length, dim, **kwargs):
         super(Lookup, self).__init__(length, dim, **kwargs)

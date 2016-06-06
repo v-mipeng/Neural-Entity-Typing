@@ -35,6 +35,7 @@ class MTLM():
         context_embed = embed.apply(context)
 
         h0 = None
+        c0 = None
         # Create and apply LSTM
         for time in range(config.lstm_time):
             lstm_ins = Linear(input_dim=config.embed_size, output_dim=4 * config.lstm_size, name='lstm_in_%s' % time)
@@ -44,10 +45,11 @@ class MTLM():
             bricks += [lstm_ins, lstm]
             lstm_tmp = lstm_ins.apply(context_embed)
             if h0 is None:
-                lstm_hidden, _ = lstm.apply(inputs = lstm_tmp, mask=context_mask.astype(theano.config.floatX))
+                lstm_hidden, lstm_cell = lstm.apply(inputs = lstm_tmp, mask=context_mask.astype(theano.config.floatX))
             else:
-                lstm_hidden, _ = lstm.apply(inputs = lstm_tmp, states = h0, mask=context_mask.astype(theano.config.floatX))
+                lstm_hidden, lstm_cell = lstm.apply(inputs = lstm_tmp, states = h0, lstm_cell = c0, mask=context_mask.astype(theano.config.floatX))
             h0 = lstm_hidden[-1, :, :]
+            c0 = lstm_cell[-1,:,:]
         # Create and apply output MLP
         out_mlp = MLP(dims = [config.lstm_size*2] + [config.n_labels],
                           activations = [Identity()],
@@ -109,6 +111,7 @@ class MTLDM():
         context_embed = embed.apply(context)
 
         h0 = None
+        c0 = None
         # Create and apply LSTM
         for time in range(config.lstm_time):
             lstm_ins = Linear(input_dim=config.embed_size, output_dim=4 * config.lstm_size, name='lstm_in_%s' % time)
@@ -118,10 +121,11 @@ class MTLDM():
             bricks += [lstm_ins, lstm]
             lstm_tmp = lstm_ins.apply(context_embed)
             if h0 is None:
-                lstm_hidden, _ = lstm.apply(inputs = lstm_tmp, mask=context_mask.astype(theano.config.floatX))
+                lstm_hidden, lstm_cell = lstm.apply(inputs = lstm_tmp, mask=context_mask.astype(theano.config.floatX))
             else:
-                lstm_hidden, _ = lstm.apply(inputs = lstm_tmp, states = h0, mask=context_mask.astype(theano.config.floatX))
+                lstm_hidden, lstm_cell = lstm.apply(inputs = lstm_tmp, states = h0, mask=context_mask.astype(theano.config.floatX))
             h0 = lstm_hidden[-1, :, :]
+            c0 = lstm_cell[-1,:,:]
 
         # Create and apply output MLP
         out_mlp = MLP(dims = [config.lstm_size*2+config.type_embed_size] + [config.n_labels],

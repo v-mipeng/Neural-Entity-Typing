@@ -1,4 +1,4 @@
-from blocks.algorithms import BasicMomentum, AdaDelta, RMSProp, Adam, CompositeRule, StepClipping, Momentum
+from blocks.algorithms import BasicMomentum, AdaDelta, RMSProp, Adam, CompositeRule, StepClipping, Momentum, Scale
 import os
 
 from model.multi_time_lstm import MTLM, MTLDM
@@ -53,7 +53,7 @@ class BasicConfig:
     n_labels = 5
 
     step_rule = AdaDelta(decay_rate = 0.95, epsilon = 1e-06)
-
+    step_rule = CompositeRule([Scale(1.0), BasicMomentum(momentum=0.9)])
     valid_freq = 1000
     save_freq = 1000
     print_freq = 100    # measured by batches

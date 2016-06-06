@@ -58,19 +58,28 @@ class MTL(BasicDataset):
         self.config = config
         self.word2id = None
         self.word_freq = None
-        if os.path.exists(config.word2id_path):
-            self.load_word2id(config.word2id_path)
-
-        if os.path.exists(config.word_freq_path):
-            self.load_word_freq(config.word_freq_path)
-
         self.provide_souces = ('context', 'mention_begin', 'mention_end','label')
-
+        self.label_index = 3
+        self.need_mask_sources = {'context':self.config.int_type}
+        self.compare_source = 'context'
+        # Regular expression for stemming
         self.regex1 = re.compile(r"[^\w/,]")
         self.regex2 = re.compile(r"^[\d,]+$")
         self.regex3 = re.compile(r"[A-Z]+")
         self.regex4 = re.compile(r"[a-z]+")
         self.regex5 = re.compile(r"\d+")
+        self.assit_words = ('<UNK>','<BOS>')
+        self.train_data_path = None
+
+        self.init()
+
+    def init(self):
+
+        if os.path.exists(self.config.word2id_path):
+            self.load_word2id(self.config.word2id_path)
+
+        if os.path.exists(self.config.word_freq_path):
+            self.load_word_freq(self.config.word_freq_path)
 
     def get_train_stream(self, data_path, valid_portion = 0.0):
         '''
@@ -85,12 +94,7 @@ class MTL(BasicDataset):
                  with training_datastream is shuffled and valid_datastream is sequencial,
                  else return training_datastream
         '''
-        if self.word_freq is None:
-            self.get_word_freq(data_path)
-            self.save_word_freq()
-        if self.word2id is None:
-            self.get_word2id(data_path)
-            self.save_word2id()
+        self.train_data_path = data_path
         dataset = self.load_dataset(data_path)
         assert valid_portion < 1
         if valid_portion > 0:
@@ -115,10 +119,6 @@ class MTL(BasicDataset):
         @return: Return test_datastream, test_dataset
 
         '''
-        if self.word_freq is None:
-            raise Exception("word_freq cannot be None!")
-        if self.word2id is None:
-            raise Exception("word2id cannot be None!")
         dataset = self.load_dataset(data_path)
         test_ds = self.construct_dataset(dataset)
         test_stream = self.construct_sequencial_stream(test_ds)
@@ -133,10 +133,6 @@ class MTL(BasicDataset):
         @return: Return predict_datastream, predict_dataset
 
         '''
-        if self.word_freq is None:
-            raise Exception("word_freq cannot be None!")
-        if self.word2id is None:
-            raise Exception("word2id cannot be None!")
         dataset = self.load_dataset(data_path, with_label = False)
         predict_ds = self.construct_dataset(dataset, False)
         predict_stream = self.construct_sequencial_stream(predict_ds)
@@ -146,11 +142,11 @@ class MTL(BasicDataset):
         dataset = zip(*dataset)
         pairs = []
         if with_label:
-            for i in range(len(self.provide_souces)):
+            for i in range(self.label_index+1):
                 pairs.append((self.provide_souces[i], dataset[i]))
             return IndexableDataset(indexables = OrderedDict(pairs))
         else:
-            for i in range(len(self.provide_souces)-1):
+            for i in range(self.label_index):
                 pairs.append((self.provide_souces[i], dataset[i]))
             return IndexableDataset(indexables = OrderedDict(pairs))
 
@@ -159,19 +155,21 @@ class MTL(BasicDataset):
         stream = DataStream(dataset, iteration_scheme=it)
         # Sort sets of multiple batches to make batches of similar sizes
         stream = Batch(stream, iteration_scheme=ConstantScheme(self.config.batch_size * self.config.sort_batch_count))
-        comparison = _balanced_batch_helper(stream.sources.index('context'))
+        comparison = _balanced_batch_helper(stream.sources.index(self.compare_source))
         stream = Mapping(stream, SortMapping(comparison))
         stream = Unpack(stream)
         stream = Batch(stream, iteration_scheme=ConstantScheme(self.config.batch_size))
         # Add mask
-        stream = Padding(stream, mask_sources=['context'], mask_dtype= self.config.int_type)
+        for source in self.need_mask_sources.iteritems():
+            stream = Padding(stream, mask_sources=[source[0]], mask_dtype= source[1])
         return stream
 
     def construct_sequencial_stream(self, dataset):
         it = SequentialScheme(dataset.num_examples, self.config.batch_size)
         stream = DataStream(dataset, iteration_scheme=it)
         # Add mask
-        stream = Padding(stream, mask_sources=['context'], mask_dtype= self.config.int_type)
+        for source in self.need_mask_sources.iteritems():
+            stream = Padding(stream, mask_sources=[source[0]], mask_dtype= source[1])
         return stream
 
     def load_dataset(self, data_path, with_label = True):
@@ -202,6 +200,18 @@ class MTL(BasicDataset):
         '''
         Parse one sample
         '''
+        if self.word_freq is None:
+            if self.train_data_path is None:
+                raise Exception("word_freq cannot be None!")
+            else:
+                self.get_word_freq(self.train_data_path)
+                self.save_word_freq()
+        if self.word2id is None:
+            if self.train_data_path is None:
+                raise Exception("word2id cannot be None!")
+            else:
+                self.get_word2id(self.train_data_path)
+                self.save_word2id()
         if self.config.develop: # Assuming that during developing, all the data has been pre-processed                
             array = line.split('\t')
             mention_tokens = array[0].split(' ')
@@ -252,14 +262,16 @@ class MTL(BasicDataset):
         '''
         Construct word2id table.
         '''
+        if self.word_freq is None:
+            self.get_word_freq(data_path)
         if os.path.isdir(data_path):
             files = [f for f in os.listdir(data_path) if f.endswith('.txt')]
         else:
             data_path, file = os.path.split(data_path)
             files = [file]
         self.word2id = dict()
-        self.word2id['<UNK>'] = len(self.word2id)
-        self.word2id['<BOS>'] = len(self.word2id)
+        for word in self.assit_words:
+            self.word2id[word] = len(self.word2id)
         for file in files:
             with codecs.open(os.path.join(data_path, file),"r", "UTF-8", errors = "ignore") as f:
                 for line in f:
@@ -316,12 +328,10 @@ class MTL(BasicDataset):
                     try:
                         line = line.strip()
                         if self.config.develop: # Assuming that during developing, all the data has been pre-processed                
-                            array = line.split('\t')
-                            context_tokens = array[len(array)-1].split(' ')
+                            context_tokens = self.get_context(line.strip()).split(' ')
                         else:
                             line = split_hyphen(line)
-                            array = line.split("\t")
-                            context = array[len(array)-1]
+                            context = self.get_context(line)
                             context_tokens = tokenize(context)
 
                         for word in context_tokens:
@@ -336,6 +346,10 @@ class MTL(BasicDataset):
                             print("Find error during counting word frequency!")
                         except:
                             print("Find error during counting word frequency!")
+
+    def get_context(self, line):
+        array =  line.split('\t')
+        return array[len(array)-1]
 
     def stem(self, word):
         if len(self.regex1.findall(word)) > 0:
@@ -385,6 +399,8 @@ class MTLD(MTL):
         else:
             raise Exception("Type2id cannot be None!")
         self.provide_souces = ('context', 'mention_begin', 'mention_end', 'type', 'type_weight', 'label')
+        self.need_mask_sources = {'context':self.config.int_type, 'type':self.config.int_type, 'type_weight': theano.config.floatX}
+        self.label_index = 5
 
     def parse_one_sample(self, line, with_label = True):
         # Extract mention matched types
@@ -404,17 +420,3 @@ class MTLD(MTL):
 
     def load_type2id(self):
         self.type2id = load_dic(self.config.type2id_path)
-
-    def construct_shuffled_stream(self, dataset):
-        # Add mask
-        stream = super(MTLD, self).construct_shuffled_stream(dataset)
-        stream = Padding(stream, mask_sources=['type'], mask_dtype= self.config.int_type)
-        stream = Padding(stream, mask_sources=['type_weight'], mask_dtype= theano.config.floatX)
-        return stream
-
-    def construct_sequencial_stream(self, dataset):
-        # Add mask
-        stream = super(MTLD, self).construct_sequencial_stream(dataset)
-        stream = Padding(stream, mask_sources=['type'], mask_dtype= self.config.int_type)
-        stream = Padding(stream, mask_sources=['type_weight'], mask_dtype= theano.config.floatX)
-        return stream

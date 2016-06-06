@@ -22,6 +22,7 @@ from abc import abstractmethod, ABCMeta
 
 from base import *
 
+
 try:
     from blocks_extras.extensions.plot import Plot
     plot_avail = True
@@ -265,7 +266,6 @@ class MTLDE(MTLE):
     '''
     def __init__(self):
         super(MTLDE, self).__init__()
-        self.init_ds()
 
     def init_ds(self):
         self.config = MTLDC()
