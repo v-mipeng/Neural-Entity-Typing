@@ -40,9 +40,9 @@ class TDLD(MTL):
     '''
     def __init__(self, config):
         super(TDLD, self).__init__(config)
-        self.provide_souces = ('to_begin', 'to_end', 'mention','label')
+        self.provide_souces = ('to_begin', 'to_end','label')
         self.label_index = 3
-        self.need_mask_sources = {'to_begin':self.config.int_type, 'to_end': self.config.int_type, 'mention': self.config.int_type}    
+        self.need_mask_sources = {'to_begin':self.config.int_type, 'to_end': self.config.int_type}    
         self.assit_words = ('<UNK>','<BOS>','<END>')
         self.compare_source = 'to_begin'
 
@@ -98,12 +98,11 @@ class TDLD(MTL):
             if (word not in self.word_freq) or (self.word_freq[word] < self.config.sparse_mention_threshold):
                 mention_tokens[i] = self.stem(mention_tokens[i])
         # Add begin_of_sentence label
-        _to_begin = self.to_word_ids(['<BOS>']+[context_tokens[begin-1-i] for i in range(begin)])
-        _to_end = self.to_word_ids([context_tokens[i] for i in range(end, len(context_tokens))]+['<END>'])
-        _mention = self.to_word_ids([context_tokens[i] for i in range(begin, end)])
+        _to_begin = self.to_word_ids(['<BOS>']+[context_tokens[end-1-i] for i in range(end)])
+        _to_end = self.to_word_ids([context_tokens[i] for i in range(begin, len(context_tokens))]+['<END>'])
         mention = " ".join(mention_tokens)
         context = " ".join(context_tokens)
         if with_label:
-            return (_to_begin, _to_end, _mention, _label, mention, context)
+            return (_to_begin, _to_end, _label, mention, context)
         else:
-            return (_to_begin, _to_end, _mention, mention, context)    
+            return (_to_begin, _to_end, mention, context)    
