@@ -26,7 +26,7 @@ from base import _balanced_batch_helper
 from error import *
 from error import *
 import time
-from __builtin__ import super
+from __builtin__ import super, int
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -118,24 +118,48 @@ class MTL(BasicDataset):
         @return: Return test_datastream, test_dataset
 
         '''
-        dataset = self.load_dataset(data_path)
+        dataset, errors = self.load_dataset(data_path)
         test_ds = self.construct_dataset(dataset)
         test_stream = self.construct_sequencial_stream(test_ds)
-        return test_stream, dataset
+        return test_stream, dataset, errors
 
-    def get_predict_stream(self, data_path):
+    def get_predict_stream(self, data_path = None, samples = None):
         '''
-        Load predict dataset from given data_path
+        Load predict dataset from given data_path or from a list of tuples with domain: mention [mention_begin, mention_length] context
 
         @param data_path: Path of a file or a folder. If it is a file path, extract dataset from this file, 
                           otherwise extract dataset from all the files with ".txt" surfix under given folder.
+
+        @samples: a list of tuples with domains: mention [mention_begin] context. if given, data_path will be ignored
+
         @return: Return predict_datastream, predict_dataset
 
         '''
-        dataset = self.load_dataset(data_path, with_label = False)
+        if samples is None:
+            if data_path is not None:
+                dataset, errors = self.load_dataset(data_path, with_label = False)
+            else:
+                raise BaseException("data_path and samples cannot be None at the same time")
+        else:
+            dataset, errors = self.parse_tuple_samples(samples)
         predict_ds = self.construct_dataset(dataset, False)
         predict_stream = self.construct_sequencial_stream(predict_ds)
-        return predict_stream, dataset
+        return predict_stream, dataset, errors
+    
+    def parse_tuple_samples(self, samples):
+        ''' parse a list of samples given by fields
+
+        @param samples: a list of tuples with fields: mention [mention_begin] context. if given, data_path will be ignored
+        '''
+        dataset = []
+        errors = []
+        for sample in samples:
+            try:
+                dataset.append(self.parse_tuple_sample(sample))
+                errors.append(False)
+            except:
+                errors.append(True)
+        return dataset, errors
 
     def construct_dataset(self, dataset, with_label = True):
         dataset = zip(*dataset)
@@ -174,6 +198,7 @@ class MTL(BasicDataset):
     def load_dataset(self, data_path, with_label = True):
         print("Load dataset from %s..." %os.path.abspath(data_path))
         dataset = []
+        errors = []
         if os.path.isdir(data_path):
             files = [f for f in os.listdir(data_path) if f.endswith('.txt')]
         else:
@@ -184,7 +209,9 @@ class MTL(BasicDataset):
                 for line in f:
                     try:
                         dataset.append(self.parse_one_sample(line.strip(), with_label))
+                        errors.append(False)
                     except MentionNotFoundError:
+                        errors.append(True)
                         continue
                     except Exception as e:
                         try:
@@ -193,7 +220,7 @@ class MTL(BasicDataset):
                         except:
                             print("Find Error during loading dataset!")
         print("Done!")
-        return dataset
+        return dataset, errors
 
     def parse_one_sample(self, line, with_label = True):
         '''
@@ -256,6 +283,60 @@ class MTL(BasicDataset):
             return (_context, _mention_begin, _mention_end, _label, mention, context)
         else:
             return (_context, _mention_begin, _mention_end, mention, context)
+
+    def parse_tuple_sample(self, sample):
+        '''
+        Parse one sample given by field
+
+        @param sample: a tuple with fileld: mention [mention_begin] context. if given, data_path will be ignored
+        '''
+        if self.word_freq is None:
+            if self.train_data_path is None:
+                raise Exception("word_freq cannot be None!")
+            else:
+                self.get_word_freq(self.train_data_path)
+                self.save_word_freq()
+        if self.word2id is None:
+            if self.train_data_path is None:
+                raise Exception("word2id cannot be None!")
+            else:
+                self.get_word2id(self.train_data_path)
+                self.save_word2id()
+        mention = sample[0]
+        context = sample[len(sample)-1]
+        if len(sample) == 2:
+            char_begin = context.find(mention)
+            if char_begin == -1:
+                raise MentionNotFoundError()
+        else:
+            char_begin = int(sample[1])
+        context = filter_context(char_begin, char_begin+len(mention), context)
+        mention = split_hyphen(mention)
+        context = split_hyphen(context)
+        mention_tokens = tokenize(mention)                                
+        context_tokens = tokenize(context)
+        begin, end = get_mention_index(context_tokens,mention_tokens)
+        if begin < 0:
+            raise MentionNotFoundError()
+        # Add mask on mention and context_tokens
+        for i in range(len(context_tokens)):
+            word = context_tokens[i].decode('utf-8').lower()
+            if i >= begin and i < end:
+                if (word not in self.word_freq) or (self.word_freq[word] < self.config.sparse_mention_threshold):
+                    context_tokens[i] = self.stem(context_tokens[i])                         
+            elif (word not in self.word_freq) or (self.word_freq[word] < self.config.sparse_word_threshold):
+                context_tokens[i] = self.stem(context_tokens[i])                         
+        for i in range(len(mention_tokens)):
+            word = mention_tokens[i].decode('utf-8').lower()
+            if (word not in self.word_freq) or (self.word_freq[word] < self.config.sparse_mention_threshold):
+                mention_tokens[i] = self.stem(mention_tokens[i])
+        # Add begin_of_sentence label
+        _context = self.to_word_ids(['<BOS>']+context_tokens)
+        _mention_begin = numpy.int32(begin).astype(self.config.int_type)
+        _mention_end = numpy.int32(end).astype(self.config.int_type)
+        mention = " ".join(mention_tokens)
+        context = " ".join(context_tokens)
+        return (_context, _mention_begin, _mention_end, mention, context)
 
     def get_word2id(self, data_path):
         '''
@@ -421,29 +502,3 @@ class MTLD(MTL):
 
     def load_type2id(self):
         self.type2id = load_dic(self.config.type2id_path)
-
-class WLSTMD(MTL):
-    '''
-    Weighted lstm dataset.
-    '''
-    def __init__(self,config):
-        '''
-        @param config: Model config module
-        '''
-        super(WLSTMD, self).__init__(config)
-        self.provide_souces = ('context','mention_begin', 'mention_end', 'distance', 'label')
-        self.need_mask_sources = {'context':self.config.int_type, 'distance':self.config.int_type}
-        self.label_index = 4
-
-    def parse_one_sample(self, line, with_label = True):
-        # Extract mention matched types
-        sample = super(WLSTMD, self).parse_one_sample(line, with_label)
-        mention_begin = sample[1]
-        mention_end = sample[2]
-        _distance = numpy.asarray([mention_begin+1-i for i in range(mention_begin+1)]+\
-            [0 for i in range(mention_begin+1, mention_end+1)]+\
-            [i-mention_end for i in range(mention_end+1, len(sample[0]))], dtype = self.config.int_type)
-        if with_label:
-            return (sample[0], sample[1], sample[2], _distance, sample[3])
-        else:
-            return (sample[0], sample[1], sample[2], _distance)

@@ -1,8 +1,7 @@
 from blocks.algorithms import BasicMomentum, AdaDelta, RMSProp, Adam, CompositeRule, StepClipping, Momentum, Scale
 import os
-from model.step_rule import WAdaDelta
 
-from model.multi_time_lstm import MTLM, MTLDM, WLSTMM
+from model.multi_time_lstm import MTLM, MTLDM
 
 class BasicConfig:
     debug = False
@@ -17,9 +16,9 @@ class BasicConfig:
 
     model_path = os.path.join(basedir,"output/models/multi_time_lstm_test.pkl");
 
-    word2id_path = os.path.join(basedir, "input/tables/stem 20 times/word2id.txt")
+    word2id_path = os.path.join(basedir, "input/tables/word2id.txt")
 
-    word_freq_path = os.path.join(basedir, "input/tables/stem 20 times/word freq.txt")
+    word_freq_path = os.path.join(basedir, "input/tables/word freq.txt")
 
     embed_path = os.path.join(basedir, "input/tables/word embedding.txt")
 
@@ -80,6 +79,10 @@ class BasicConfig:
 class MTLC(BasicConfig):
     Model = MTLM
 
+    with_pre_train = False
+
+    emb_backup_path = os.path.join(basedir, "input/tables/word embedding backup.txt")
+
  
 class MTLDC(BasicConfig):
     Model = MTLDM
@@ -89,10 +92,3 @@ class MTLDC(BasicConfig):
     type2id_path = os.path.join(BasicConfig.basedir, "input/tables/type2id.txt")
 
     type_embed_size = 100
-
-class WLSTMC(BasicConfig):
-    Model = WLSTMM
-
-    step_rule = WAdaDelta(special_para_names = "delta")
-
-    model_path = os.path.join(BasicConfig.basedir,"output/models/weight_lstm.pkl");

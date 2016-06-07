@@ -31,9 +31,6 @@
     <Compile Include="source\config\multi_time_lstm.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="source\config\tridi_lstm.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="source\config\__init__.py" />
     <Compile Include="source\dataset\base.py">
       <SubType>Code</SubType>
@@ -44,9 +41,6 @@
     <Compile Include="source\dataset\multi_time_lstm.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="source\dataset\tridi_lstm.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="source\dataset\__init__.py" />
     <Compile Include="source\ensemble.py">
       <SubType>Code</SubType>
@@ -55,18 +49,8 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="source\entrance\multi_time_lstm.py" />
-    <Compile Include="source\entrance\tridi_lstm.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="source\entrance\__init__.py" />
-    <Compile Include="source\model\lstm.py" />
     <Compile Include="source\model\multi_time_lstm.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="source\model\step_rule.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="source\model\tridir_lstm.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="source\model\word_emb.py">
