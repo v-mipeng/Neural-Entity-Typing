@@ -431,9 +431,9 @@ class WLSTMD(MTL):
         @param config: Model config module
         '''
         super(WLSTMD, self).__init__(config)
-        self.provide_souces = ('context', 'distance', 'label')
+        self.provide_souces = ('context','mention_begin', 'mention_end', 'distance', 'label')
         self.need_mask_sources = {'context':self.config.int_type, 'distance':self.config.int_type}
-        self.label_index = 2
+        self.label_index = 4
 
     def parse_one_sample(self, line, with_label = True):
         # Extract mention matched types
@@ -444,6 +444,6 @@ class WLSTMD(MTL):
             [0 for i in range(mention_begin+1, mention_end+1)]+\
             [i-mention_end for i in range(mention_end+1, len(sample[0]))], dtype = self.config.int_type)
         if with_label:
-            return (sample[0], _distance, sample[3])
+            return (sample[0], sample[1], sample[2], _distance, sample[3])
         else:
-            return (sample[0], _distance)
+            return (sample[0], sample[1], sample[2], _distance)

@@ -82,7 +82,7 @@ class WLSTM(LSTM):
 
         return next_states, next_cells
 
-class MLSTM(LSTM):
+class MLSTM(object):
     '''
     Multiple time LSTM
 
@@ -103,18 +103,21 @@ class MLSTM(LSTM):
         it will apply "times" different lstm on the input sequence
         
     '''
-    def __init__(self, times, shared = False, *args, **kwargs):
+    def __init__(self, times, dim, activation = None, gate_activation = None, shared = False, **kwargs):
 
         self.times = times
         self.shared = shared
+        self.dim = dim
+        self.activation = activation
+        self.gate_activation = gate_activation
+        self.weights_init = None
+        self.biases_init = None
         self.model = LSTM
-        super(MLSTM, self).__init__(*args, **kwargs)
-        self.init()
 
     def apply(self, inputs, states = None, cells = None, mask = None):
         h0 = states
         c0 = cells
-        for time in range(times):
+        for time in range(self.times):
             if h0 is None:
                 lstm_hiddens, lstm_cells = self.rnns[time].apply(inputs = inputs, mask = mask)
             else:
@@ -134,29 +137,28 @@ class MLSTM(LSTM):
         else:
             self.rnns = [self.model(self.dim, self.activation, self.gate_activation, name = "lstm")]*self.times
             
-    def _allocate(self):
+    def initialize(self):
+        self.init()
         if not self.shared:
             for rnn in self.rnns:
-                rnn._allocate()
+                rnn.weights_init = self.weights_init
+                rnn.biases_init = self.biases_init
+                rnn.initialize()
         else:
-            self.rnns[0]._allocate()
-
-    def _initialize(self):
-        if not self.shared:
-            for rnn in self.rnns:
-                rnn._initialize()
-        else:
-            self.rnns[0]._initialize()
+            self.rnns[0].weights_init = self.weights_init
+            self.rnns[0].biases_init = self.biases_init
+            self.rnns[0].initialize()
 
 class MWLSTM(MLSTM):
-    def __init__(self, times, shared = False, *args, **kwargs):
-        return super(MWLSTM, self).__init__(times, shared, *args, **kwargs)
-        self.model = MLSTM
+    def __init__(self, times, dim, activation = None, gate_activation = None, shared = False, **kwargs):
+        super(MWLSTM, self).__init__(times, dim, activation, gate_activation, shared , **kwargs)
+        self.model = WLSTM
 
-    def apply(self, inputs, states = None, cells = None, mask = None, weights = None):
+
+    def apply(self, inputs, weights = None, states = None, cells = None, mask = None):
         h0 = states
         c0 = cells
-        for time in range(tiems):
+        for time in range(self.times):
             if h0 is None:
                 lstm_hiddens, lstm_cells = self.rnns[time].apply(inputs = inputs, weights = weights, mask = mask)
             else:
