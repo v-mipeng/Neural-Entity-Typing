@@ -13,10 +13,10 @@ from blocks.main_loop import MainLoop
 from blocks.model import Model
 from blocks.algorithms import GradientDescent
 
-from dataset.multi_time_lstm import MTL, MTLD, WLSTMD
+from dataset.multi_time_lstm import MTL, MTLD, WLSTMD, BDLSTMD
 from paramsaveload import SaveLoadParams
 
-from config.multi_time_lstm import MTLC, MTLDC, WLSTMC
+from config.multi_time_lstm import MTLC, MTLDC, WLSTMC, BDLSTMC
 
 from abc import abstractmethod, ABCMeta
 
@@ -362,3 +362,14 @@ class WLSTME(MTLE):
     def init_ds(self):
         self.config = WLSTMC()
         self.ds = WLSTMD(self.config)
+
+class BDLSTME(MTLE):
+    '''
+    Entrance of bi-direction lstm system
+    '''
+    def __init__(self):
+        super(BDLSTME, self).__init__()
+
+    def init_ds(self):
+        self.config = BDLSTMC()
+        self.ds = BDLSTMD(self.config)

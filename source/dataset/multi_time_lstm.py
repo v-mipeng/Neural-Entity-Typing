@@ -447,3 +447,30 @@ class WLSTMD(MTL):
             return (sample[0], sample[1], sample[2], _distance, sample[3])
         else:
             return (sample[0], sample[1], sample[2], _distance)
+
+class BDLSTMD(MTL):
+    '''
+    Bi-direction lstm dataset
+    '''
+    def __init__(self,config):
+        '''
+        @param config: Model config module
+        '''
+        super(BDLSTMD, self).__init__(config)
+        self.provide_souces = ('order_context','reverse_context', 'label')
+        self.need_mask_sources = {'order_context':self.config.int_type, 'reverse_context':self.config.int_type}
+        self.label_index = 2
+        self.compare_source = 'order_context'
+
+    def parse_one_sample(self, line, with_label = True):
+        # Extract mention matched types
+        sample = super(BDLSTMD, self).parse_one_sample(line, with_label)
+        context_tokens = sample[0]
+        mention_begin = sample[1]
+        mention_end = sample[2]
+        order_context = context_tokens[0:mention_end+1]
+        reverse_context = context_tokens[mention_begin+1:][::-1]
+        if with_label:
+            return (order_context, reverse_context, sample[3])+sample[4:]
+        else:
+            return (order_context, reverse_context)+sample[4:]

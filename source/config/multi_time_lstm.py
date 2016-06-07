@@ -2,7 +2,7 @@ from blocks.algorithms import BasicMomentum, AdaDelta, RMSProp, Adam, CompositeR
 import os
 from model.step_rule import WAdaDelta
 
-from model.multi_time_lstm import MTLM, MTLDM, WLSTMM
+from model.multi_time_lstm import MTLM, MTLDM, WLSTMM, BDLSTMM
 
 class BasicConfig:
     debug = False
@@ -96,3 +96,8 @@ class WLSTMC(BasicConfig):
     step_rule = WAdaDelta(special_para_names = "delta")
 
     model_path = os.path.join(BasicConfig.basedir,"output/models/weight_lstm.pkl");
+
+class BDLSTMC(BasicConfig):
+    Model = BDLSTMM
+
+    model_path = os.path.join(BasicConfig.basedir,"output/models/bidir_lstm.pkl");

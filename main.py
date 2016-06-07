@@ -1,9 +1,9 @@
 import sys
 sys.path.append("./source")
-from entrance.multi_time_lstm import MTLE, WLSTME
+from entrance.multi_time_lstm import MTLE, WLSTME, BDLSTME
 from entrance.tridi_lstm import TDLE
 
-model = WLSTME()
+model = BDLSTME()
 
 # Train model with default training dataset
 model.train(train_path = None, valid_portion = None, valid_path = None, model_path = None)
