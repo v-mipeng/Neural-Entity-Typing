@@ -1,4 +1,6 @@
 import numpy
+import theano
+import theano.tensor as tensor
 import blocks.bricks
 import blocks.bricks.attention
 import blocks.bricks.interfaces
@@ -6,6 +8,8 @@ from blocks.bricks.recurrent import LSTM, BaseRecurrent, Bidirectional, GatedRec
 from blocks.bricks import Tanh, Softmax, Linear, MLP, Identity, Rectifier
 from blocks.initialization import Constant, IsotropicGaussian, Orthogonal
 from blocks.bricks.base import application
+from blocks.bricks.recurrent import recurrent
+
 
 class WLSTM(LSTM):
     '''
@@ -18,7 +22,7 @@ class WLSTM(LSTM):
 
     @recurrent(sequences=['inputs', 'mask', "weights"], states=['states', 'cells'],
                contexts=[], outputs=['states', 'cells'])
-    def apply(self, inputs, states = None, cells = None, mask = None, weights = None):
+    def apply(self, inputs, weights, states = None, cells = None, mask = None):
         """Apply Long Short Term Memory transition with elements weighted
 
         Parameters
@@ -63,19 +67,18 @@ class WLSTM(LSTM):
         forget_gate = self.gate_activation.apply(
             slice_last(activation, 1) + cells * self.W_cell_to_forget)
         next_cells = (
-            forget_gate * cells +
-            in_gate * self.activation.apply(slice_last(activation, 2)))
+            forget_gate * cells*weights[:,None]+cells*(1-weights[:,None]) +
+            in_gate * self.activation.apply(slice_last(activation, 2))*weights[:,None])
         out_gate = self.gate_activation.apply(
             slice_last(activation, 3) + next_cells * self.W_cell_to_out)
-        next_states = out_gate * self.activation.apply(next_cells)
+        temp = self.activation.apply(next_cells)
+        next_states = out_gate * temp*weights[:,None] + (1-weights[:,None])*temp
 
         if mask:
             next_states = (mask[:, None] * next_states +
                            (1 - mask[:, None]) * states)
             next_cells = (mask[:, None] * next_cells +
                           (1 - mask[:, None]) * cells)
-        if weights:
-            next_cells = next_cells*weights[:, None]*mask[:,None]
 
         return next_states, next_cells
 
@@ -129,7 +132,7 @@ class MLSTM(LSTM):
             for time in range(self.times):
                 self.rnns.append(self.model(self.dim, self.activation, self.gate_activation, name = "lstm_%s" %time))
         else:
-            self.rnns = [self.model(self.dim, self.activation, self.gate_activation, name = "lstm"]*self.times
+            self.rnns = [self.model(self.dim, self.activation, self.gate_activation, name = "lstm")]*self.times
             
     def _allocate(self):
         if not self.shared:

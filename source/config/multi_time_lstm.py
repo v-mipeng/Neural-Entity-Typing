@@ -1,7 +1,8 @@
 from blocks.algorithms import BasicMomentum, AdaDelta, RMSProp, Adam, CompositeRule, StepClipping, Momentum, Scale
 import os
+from model.step_rule import WAdaDelta
 
-from model.multi_time_lstm import MTLM, MTLDM
+from model.multi_time_lstm import MTLM, MTLDM, WLSTMM
 
 class BasicConfig:
     debug = False
@@ -88,3 +89,10 @@ class MTLDC(BasicConfig):
     type2id_path = os.path.join(BasicConfig.basedir, "input/tables/type2id.txt")
 
     type_embed_size = 100
+
+class WLSTMC(BasicConfig):
+    Model = WLSTMM
+
+    step_rule = WAdaDelta(special_para_names = "delta")
+
+    model_path = os.path.join(BasicConfig.basedir,"output/models/weight_lstm.pkl");

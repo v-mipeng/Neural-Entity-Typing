@@ -13,6 +13,7 @@ from blocks.graph import ComputationGraph, apply_dropout, apply_noise
 from word_emb import Lookup
 from blocks.initialization import Constant, IsotropicGaussian, Orthogonal
 
+from lstm import WLSTM
 
 class MTLM():
     def __init__(self, config, dataset):
@@ -156,6 +157,63 @@ class MTLDM():
         for brick in bricks:
             brick.biases_init = Constant(0)
             brick.initialize()
+
+class WLSTMM():
+    def __init__(self, config, dataset):
+        context = tensor.imatrix('context')                                 # shape: batch_size*sequence_length
+        context_mask = tensor.imatrix('context_mask')
+        distance = tensor.imatrix('distance')
+        label = tensor.ivector('label')
+        delta = theano.shared((10.0*numpy.sqrt(2.0)).astype(theano.config.floatX), name = 'delta')
+        self.delta = delta
+        weights = tensor.exp(-distance*distance/(delta*delta))
+        self.weights = weights
+        # set time as first dimension
+        context = context.dimshuffle(1, 0)
+        context_mask = context_mask.dimshuffle(1, 0)
+        weights = weights.dimshuffle(1,0)
+
+        # Initialize embedding
+        embed = Lookup(len(dataset.word2id), config.embed_size, name='word_embed')
+        embs = initialize_embed(config, dataset.word2id)
+        embed.initialize_with_pretrain(embs)                    # initialize embeding table with pre-traing values
+        # Embed contexts
+        context_embed = embed.apply(context)
+
+        lstm_ins = Linear(input_dim=config.embed_size, output_dim=4 * config.lstm_size, name='lstm_in')
+        lstm_ins.weights_init = IsotropicGaussian(std= numpy.sqrt(2)/numpy.sqrt(config.embed_size+config.lstm_size*4))
+        lstm_ins.biases_init = Constant(0)
+        lstm_ins.initialize()
+        wlstm = WLSTM(dim=config.lstm_size, activation=Tanh(), name='wlstm')
+        wlstm.weights_init = IsotropicGaussian(std= 1/numpy.sqrt(config.lstm_size))
+        wlstm.biases_init = Constant(0)
+        wlstm.initialize()
+        wlstm_hidden, _ = wlstm.apply(inputs = lstm_ins.apply(context_embed), weights = weights, mask=context_mask.astype(theano.config.floatX))
+
+        # Create and apply output MLP
+        out_mlp = MLP(dims = [config.lstm_size] + [config.n_labels],
+                          activations = [Identity()],
+                          name='out_mlp')
+        out_mlp.weights_init = IsotropicGaussian(std = numpy.sqrt(2)/numpy.sqrt(config.lstm_size+config.n_labels))
+        out_mlp.biases_init = Constant(0)
+        out_mlp.initialize()
+        out_mlp_inputs = wlstm_hidden[-1,:,:]
+        probs = out_mlp.apply(out_mlp_inputs)
+        # Calculate prediction, cost and error rate
+        pred = probs.argmax(axis=1)
+        cost = Softmax().categorical_cross_entropy(label, probs).mean()
+        error_rate = tensor.neq(label, pred).mean()
+
+        # Other stuff
+        cost.name = 'cost'
+        error_rate.name = 'error_rate'
+
+        self.sgd_cost = cost
+        self.monitor_vars = [[cost], [error_rate],[delta]]
+        self.monitor_vars_valid = [[cost], [error_rate], [delta]]
+        self.pred = pred
+        self.error_rate = error_rate
+
 
 def initialize_embed(config, word2id):
     path = config.embed_path

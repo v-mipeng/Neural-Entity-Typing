@@ -13,10 +13,10 @@ from blocks.main_loop import MainLoop
 from blocks.model import Model
 from blocks.algorithms import GradientDescent
 
-from dataset.multi_time_lstm import MTL, MTLD
+from dataset.multi_time_lstm import MTL, MTLD, WLSTMD
 from paramsaveload import SaveLoadParams
 
-from config.multi_time_lstm import MTLC, MTLDC
+from config.multi_time_lstm import MTLC, MTLDC, WLSTMC
 
 from abc import abstractmethod, ABCMeta
 
@@ -114,7 +114,6 @@ class MTLE(BasicEntrance):
                                     step_rule=self.config.step_rule,
                                     parameters=self.model.parameters,
                                     on_unused_sources='ignore')
-
         extensions = [
         TrainingDataMonitoring(
             [v for l in self.m.monitor_vars for v in l],
@@ -270,3 +269,96 @@ class MTLDE(MTLE):
     def init_ds(self):
         self.config = MTLDC()
         self.ds = MTLD(self.config)
+
+class WLSTME(MTLE):
+    def __init__(self):
+        return super(WLSTME, self).__init__()
+
+    def train(self, train_path = None, valid_portion = None, valid_path =None, model_path = None):
+        '''
+        Train a multi_time_lstm model with given training dataset or the default dataset which is defined with config.multi_time_lstm.BasicConfig.train_path
+
+        @param train_path: path of the training dataset, file or directory, default: config.multi_time_lstm.BasicConfig.train_path
+                           File foramt: Mention TAB True_label TAB Context
+
+        @param valid_portion: a float value define the portion of validation, default: config.multi_time_lstm.MLTC.valid_portion
+                              size of validation dataset: all_the_sample_num * valid_portion
+
+        @param valid_path: path of the validation dataset, file or directory, if given, the valid_portion will be 0.
+                           
+
+        @param model_path: path to dump the trained model, default: config.multi_time_lstm module.model_path
+        '''
+        if train_path is None:
+            train_path = self.config.train_path
+        if valid_portion is None:
+            valid_portion = self.config.valid_portion
+        if model_path is None:
+            model_path = self.config.model_path
+            self.model_path = model_path
+        assert valid_portion >= 0 and valid_portion < 1.0
+
+        if valid_path is None:
+            train_stream, valid_stream = self.ds.get_train_stream(train_path, valid_portion)
+        else:
+            train_stream = self.ds.get_train_stream(train_path, 0.0)
+            valid_stream = self.ds.get_train_stream(valid_path, 0.0)
+
+        # Build the Blocks stuff for training
+        if self.m is None:
+            self.m = self.config.Model(self.config, self.ds) # with word2id
+        if self.model is None:
+            self.model = Model(self.m.sgd_cost) 
+        #cg = ComputationGraph(self.m.weights)
+        #f_weight = theano.function(cg.inputs, self.m.weights)
+        #for data in train_stream.get_epoch_iterator():
+        #    print(data[train_stream.sources.index("distance")].shape)
+        #    weights = f_weight(data[train_stream.sources.index("distance")])
+        #    print(weights)
+        #    raw_input("continue")
+        algorithm = GradientDescent(cost=self.m.sgd_cost,
+                                    step_rule=self.config.step_rule,
+                                    parameters=self.model.parameters+[self.m.delta],
+                                    on_unused_sources = "ignore")
+        extensions = [
+        TrainingDataMonitoring(
+            [v for l in self.m.monitor_vars for v in l],
+            prefix='train',
+            every_n_batches= self.config.print_freq)
+            ]
+
+        if self.config.save_freq is not None and model_path is not None:
+            extensions += [
+                SaveLoadParams(path=model_path,
+                                model=self.model,
+                                before_training=True,    # if exist model, the program will load it first
+                                after_training=True,
+                                after_epoch=True,
+                                every_n_batches=self.config.save_freq)
+            ]
+        if valid_stream is not None and self.config.valid_freq != -1:
+            extensions += [
+                DataStreamMonitoring(
+                    [v for l in self.m.monitor_vars_valid for v in l],
+                    valid_stream,
+    #                before_first_epoch = False,
+                    prefix='valid',
+                    every_n_batches=self.config.valid_freq),
+            ]
+        extensions += [
+                Printing(every_n_batches=self.config.print_freq, after_epoch=True),
+                ProgressBar()
+        ]
+
+        main_loop = MainLoop(
+            model=self.model,
+            data_stream=train_stream,
+            algorithm=algorithm,    # learning algorithm: AdaDelta, Momentum or others
+            extensions=extensions
+        )
+        # Run the model !
+        main_loop.run()
+
+    def init_ds(self):
+        self.config = WLSTMC()
+        self.ds = WLSTMD(self.config)

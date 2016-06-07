@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3ebda6c3-5f65-4272-9d9c-a84a0d1b5935</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>debug.py</StartupFile>
+    <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -59,10 +59,11 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="source\entrance\__init__.py" />
-    <Compile Include="source\model\multi_lstm_brick.py">
+    <Compile Include="source\model\lstm.py" />
+    <Compile Include="source\model\multi_time_lstm.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="source\model\multi_time_lstm.py">
+    <Compile Include="source\model\step_rule.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="source\model\tridir_lstm.py">

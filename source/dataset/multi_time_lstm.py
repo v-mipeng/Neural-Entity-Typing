@@ -24,7 +24,6 @@ from abc import abstractmethod, ABCMeta
 from base import *
 from base import _balanced_batch_helper
 from error import *
-from resource.dbpedia import DBpedia
 from error import *
 import time
 from __builtin__ import super
@@ -384,9 +383,11 @@ class MTL(BasicDataset):
         save_dic(self.config.word_freq_path, self.word_freq)
 
 class MTLD(MTL):
+
     '''
     Multiple_Time_LSTM_with_Dbpedia dataset.
     '''
+    from resource.dbpedia import DBpedia
     def __init__(self,config):
         '''
         @param config: Model config module
@@ -420,3 +421,29 @@ class MTLD(MTL):
 
     def load_type2id(self):
         self.type2id = load_dic(self.config.type2id_path)
+
+class WLSTMD(MTL):
+    '''
+    Weighted lstm dataset.
+    '''
+    def __init__(self,config):
+        '''
+        @param config: Model config module
+        '''
+        super(WLSTMD, self).__init__(config)
+        self.provide_souces = ('context', 'distance', 'label')
+        self.need_mask_sources = {'context':self.config.int_type, 'distance':self.config.int_type}
+        self.label_index = 2
+
+    def parse_one_sample(self, line, with_label = True):
+        # Extract mention matched types
+        sample = super(WLSTMD, self).parse_one_sample(line, with_label)
+        mention_begin = sample[1]
+        mention_end = sample[2]
+        _distance = numpy.asarray([mention_begin+1-i for i in range(mention_begin+1)]+\
+            [0 for i in range(mention_begin+1, mention_end+1)]+\
+            [i-mention_end for i in range(mention_end+1, len(sample[0]))], dtype = self.config.int_type)
+        if with_label:
+            return (sample[0], _distance, sample[3])
+        else:
+            return (sample[0], _distance)
