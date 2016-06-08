@@ -13,10 +13,10 @@ from blocks.main_loop import MainLoop
 from blocks.model import Model
 from blocks.algorithms import GradientDescent
 
-from dataset.multi_time_lstm import MTL, MTLD, WLSTMD, BDLSTMD
+from dataset.lstm_dataset import MTL, MTLD, WLSTMD, BDLSTMD, BDLSTMD2
 from paramsaveload import SaveLoadParams
 
-from config.multi_time_lstm import MTLC, MTLDC, WLSTMC, BDLSTMC
+from config.lstm_config import MTLC, MTLDC, WLSTMC, BDLSTMC, BDLSTMC2
 
 from abc import abstractmethod, ABCMeta
 
@@ -52,7 +52,7 @@ class BasicEntrance(object):
 
 class MTLE(BasicEntrance):
     '''
-    Entrance of multiple time LSTM system
+    Multiple Time LSTM Entrance
     '''
     def __init__(self):
         self.config = None
@@ -68,11 +68,14 @@ class MTLE(BasicEntrance):
                     3:"person",
                     4:"product"
                 }
-        self.init_ds()
+        self.f_pred_prob = None
+        self.pred_inputs = None
+        self.init()
     
-    def init_ds(self):
+    def init(self):
         self.config = MTLC()
         self.ds = MTL(self.config)
+        self.init_model(self.config.model_path)
 
     def train(self, train_path = None, valid_portion = None, valid_path =None, model_path = None):
         '''
@@ -180,7 +183,7 @@ class MTLE(BasicEntrance):
         test_files, test_result_files = get_in_out_files(test_path, test_result_path)
         for test_file, test_result_file in zip(test_files,test_result_files):
             print("Test on %s..." % test_file)
-            results = self.pred(test_file, for_test = True)
+            results = self.pred_by_file(test_file, for_test = True)
             save_result(test_result_file, results)
             print("Done!")
 
@@ -211,11 +214,44 @@ class MTLE(BasicEntrance):
         predict_files, predict_result_files = get_in_out_files(predict_path, predict_result_path)
         for predict_file, predict_result_file in zip(predict_files,predict_result_files):
             print("Predict on %s..." % predict_file)
-            results = self.pred(predict_file, for_test = False)
+            results = self.pred_by_file(predict_file, for_test = False)
             save_result(predict_result_file, results)
             print("Done!")
 
-    def pred(self, file_path, for_test = True):
+    def predict_by_tuples(self, samples, model_path = None):
+        '''predict type of given samples.
+        This is an API for service
+
+        @param samples: a list of tuples with domains: mention [mention_begin] context. if given, data_path will be ignored
+        '''
+        # Initilize model
+        if model_path is not None:
+            if self.model_path is None or model_path != self.model_path:
+                self.init_model(model_path)
+        elif self.model_path is None:
+            self.init_model(self.config.model_path)
+        stream, data, errors = self.ds.get_predict_stream(samples = samples)
+        if stream is None:
+            return [], errors
+        labels, confidences = self.pred(stream)
+        if len(labels) == len(errors):
+            return labels, confidences
+        else:
+            labels_copy = []
+            confidences_copy = []
+            i = 0
+            j = 0
+            for j in range(len(errors)):
+                if errors[j] is True:
+                    labels_copy.append('UNKNOWN')
+                    confidences_copy.append(0.0)
+                else:
+                    labels_copy.append(labels[i])
+                    confidences_copy.append(confidences[i])
+                    i += 1
+        return labels_copy, confidences_copy      
+
+    def pred_by_file(self, file_path, for_test = True):
         '''
         Make prediction on the samples within given input_file
 
@@ -227,50 +263,68 @@ class MTLE(BasicEntrance):
         @return result: a list of tuples, with every tuple consistent with the output format.
         '''
         if for_test:
-            stream, data = self.ds.get_test_stream(file_path)
+            stream, data, errors = self.ds.get_test_stream(file_path)
         else:
-            stream, data = self.ds.get_predict_stream(file_path)
-        cg = ComputationGraph(self.m.pred)
-        pred_inputs = cg.inputs
-        if self.f_pred is not None:
-            f_pred = self.f_pred
-        else:
-            self.f_pred = f_pred = theano.function(pred_inputs, self.m.pred)  
+            stream, data, errors = self.ds.get_predict_stream(file_path)
         result = []
-        labels = []
-        for inputs in stream.get_epoch_iterator():
-            p_inputs = tuple([inputs[stream.sources.index(str(input_name))] for input_name in pred_inputs]) 
-            label_ids = f_pred(*p_inputs)
-            labels += [self.id2label[label_id] for label_id in label_ids]
+        labels,_ = self.pred(stream)
         data = zip(*data)
         if for_test:
             true_labels = [self.id2label[label_id] for label_id in data[-3]]
             result = zip(data[-2],true_labels, labels, data[-1])
         else:
             result = zip(data[-2], labels, data[-1])
-        return result                 
+        return result    
 
-    def init_model(self, model_path):
+    def pred(self, stream):
+        '''
+        Make prediction on given samples 
+
+        @param stream: class BasicDataset. 
+        input datastream
+
+        @return result: a list of types
+        '''
+        labels = []
+        confidences = []
+        for inputs in stream.get_epoch_iterator():
+            p_inputs = tuple([inputs[stream.sources.index(str(input_name))] for input_name in self.pred_inputs]) 
+            label_ids = self.f_pred(*p_inputs)
+            confidences += [confidence for confidence in self.f_pred_prob(*p_inputs)]
+            labels += [self.id2label[label_id] for label_id in label_ids]
+        return labels, confidences   
+
+    def init_model(self, model_path = None):
         if self.m is None:
-            self.m = self.config.Model(self.config, self.ds) # with word2id
+            self.m = self.config.Model(self.config, self.ds)
         model = Model(self.m.sgd_cost)   
+        if model_path is None:
+            model_path = self.config.model_path
         initializer = SaveLoadParams(model_path, model)
         initializer.do_load()
         self.model = model
         self.model_path = model_path
+        if self.f_pred is None:
+            cg = ComputationGraph(self.m.pred)
+            self.pred_inputs = cg.inputs
+            self.f_pred = theano.function(self.pred_inputs, self.m.pred)  
+            self.f_pred_prob = theano.function(self.pred_inputs, self.m.pred_prob)
 
 class MTLDE(MTLE):
     '''
-    Entrance of Multiple_Time_LSTM_with_DBpedia system
+    Multiple Time LSTM  with DBpedia Entrance
     '''
     def __init__(self):
         super(MTLDE, self).__init__()
 
-    def init_ds(self):
+    def init(self):
         self.config = MTLDC()
         self.ds = MTLD(self.config)
 
 class WLSTME(MTLE):
+    '''
+    Weighted Single LSTM Entrance
+    '''
     def __init__(self):
         return super(WLSTME, self).__init__()
 
@@ -359,17 +413,29 @@ class WLSTME(MTLE):
         # Run the model !
         main_loop.run()
 
-    def init_ds(self):
+    def init(self):
         self.config = WLSTMC()
         self.ds = WLSTMD(self.config)
 
 class BDLSTME(MTLE):
     '''
-    Entrance of bi-direction lstm system
+    Bi-direction LSTM Entrance: order_lstm(mention_end)||reverse_lstm(mention_begin)
     '''
     def __init__(self):
         super(BDLSTME, self).__init__()
 
-    def init_ds(self):
+    def init(self):
         self.config = BDLSTMC()
         self.ds = BDLSTMD(self.config)
+        self.init_model(self.config.model_path)
+
+class BDLSTME2(MTLE):
+    '''
+    Bi-direction LSTM Entrance: order_lstm(mention_begin-1)||max_pooling(mention)||reverse_lstm(mention_end+1)
+    '''
+    def __init__(self):
+        super(BDLSTME2, self).__init__()
+
+    def init(self):
+        self.config = BDLSTMC2()
+        self.ds = BDLSTMD2(self.config)

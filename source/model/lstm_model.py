@@ -13,9 +13,12 @@ from blocks.graph import ComputationGraph, apply_dropout, apply_noise
 from word_emb import Lookup
 from blocks.initialization import Constant, IsotropicGaussian, Orthogonal
 
-from lstm import WLSTM, MWLSTM
+from lstm import MLSTM, WLSTM, MWLSTM
 
-class MTLM():
+class MTLM(object):
+    '''
+    Multiple Time LSTM Model
+    '''
     def __init__(self, config, dataset):
         context = tensor.imatrix('context')                                 # shape: batch_size*sequence_length
         context_mask = tensor.imatrix('context_mask')
@@ -35,30 +38,28 @@ class MTLM():
         # Embed contexts
         context_embed = embed.apply(context)
 
-        h0 = None
-        # Create and apply LSTM
-        for time in range(config.lstm_time):
-            lstm_ins = Linear(input_dim=config.embed_size, output_dim=4 * config.lstm_size, name='lstm_in_%s' % time)
-            lstm_ins.weights_init = IsotropicGaussian(std= numpy.sqrt(2)/numpy.sqrt(config.embed_size+config.lstm_size))
-            lstm = LSTM(dim=config.lstm_size, activation=Tanh(), name='lstm_%s' % time)
-            lstm.weights_init = IsotropicGaussian(std= 1/numpy.sqrt(config.lstm_size))
-            bricks += [lstm_ins, lstm]
-            lstm_tmp = lstm_ins.apply(context_embed)
-            if h0 is None:
-                lstm_hidden, lstm_cell = lstm.apply(inputs = lstm_tmp, mask=context_mask.astype(theano.config.floatX))
-            else:
-                lstm_hidden, lstm_cell = lstm.apply(inputs = lstm_tmp, states = h0, mask=context_mask.astype(theano.config.floatX))
-            h0 = lstm_hidden[-1, :, :]
+        mlstm_ins = Linear(input_dim=config.embed_size, output_dim=4 * config.lstm_size, name='mlstm_in')
+        mlstm_ins.weights_init = IsotropicGaussian(std= numpy.sqrt(2)/numpy.sqrt(config.embed_size+config.lstm_size))
+        mlstm_ins.biases_init = Constant(0)
+        mlstm_ins.initialize()
+        mlstm = MLSTM(config.lstm_time, config.lstm_size, shared = False)
+        mlstm.weights_init = IsotropicGaussian(std= numpy.sqrt(2)/numpy.sqrt(config.embed_size+config.lstm_size))
+        mlstm.biases_init = Constant(0)
+        mlstm.initialize()
+        mlstm_hidden, mlstm_cell = mlstm.apply(inputs = mlstm_ins.apply(context_embed), mask = context_mask.astype(theano.config.floatX))
         # Create and apply output MLP
         out_mlp = MLP(dims = [config.lstm_size*2] + [config.n_labels],
                           activations = [Identity()],
                           name='out_mlp')
         out_mlp.weights_init = IsotropicGaussian(std = numpy.sqrt(2)/numpy.sqrt(config.lstm_size+config.n_labels))
-        bricks.append(out_mlp)
-        mention_hidden = tensor.concatenate([lstm_hidden[mention_end, tensor.arange(context.shape[1]), :],
-                                            lstm_hidden[mention_begin, tensor.arange(context.shape[1]), :]],axis=1)
-        self.mention_hidden = mention_hidden
-        probs = out_mlp.apply(mention_hidden)
+        out_mlp.biases_init = Constant(0)
+        out_mlp.initialize()
+        out_mlp_inputs = tensor.concatenate([mlstm_hidden[mention_end, tensor.arange(context.shape[1]), :],
+                                            mlstm_hidden[mention_begin, tensor.arange(context.shape[1]), :]],axis=1)
+        probs = out_mlp.apply(out_mlp_inputs)
+        self.get_output(label, probs)
+
+    def get_output(self, label, probs):
         # Calculate prediction, cost and error rate
         pred = probs.argmax(axis=1)
         cost = Softmax().categorical_cross_entropy(label, probs).mean()
@@ -72,14 +73,13 @@ class MTLM():
         self.monitor_vars = [[cost], [error_rate]]
         self.monitor_vars_valid = [[cost], [error_rate]]
         self.pred = pred
+        self.pred_prob = Softmax().apply(probs).max(axis = 1)
         self.error_rate = error_rate
 
-        # Initialize bricks
-        for brick in bricks:
-            brick.biases_init = Constant(0)
-            brick.initialize()
-
-class MTLDM():
+class MTLDM(MTLM):
+    '''
+    Multiple Time LSTM with DBpedia Model
+    '''
     def __init__(self, config, dataset):
         context = tensor.imatrix('context')                                 # shape: batch_size*sequence_length
         context_mask = tensor.imatrix('context_mask')
@@ -88,7 +88,6 @@ class MTLDM():
         mention_begin = tensor.ivector('mention_begin')
         mention_end = tensor.ivector('mention_end')
         label = tensor.ivector('label')
-        bricks = []
 
 
         # set time as first dimension
@@ -109,54 +108,33 @@ class MTLDM():
         # Apply embedding
         context_embed = embed.apply(context)
 
-        h0 = None
-        c0 = None
-        # Create and apply LSTM
-        for time in range(config.lstm_time):
-            lstm_ins = Linear(input_dim=config.embed_size, output_dim=4 * config.lstm_size, name='lstm_in_%s' % time)
-            lstm_ins.weights_init = IsotropicGaussian(std= numpy.sqrt(2)/numpy.sqrt(config.embed_size+config.lstm_size))
-            lstm = LSTM(dim=config.lstm_size, activation=Tanh(), name='lstm_%s' % time)
-            lstm.weights_init = IsotropicGaussian(std= 1/numpy.sqrt(config.lstm_size))
-            bricks += [lstm_ins, lstm]
-            lstm_tmp = lstm_ins.apply(context_embed)
-            if h0 is None:
-                lstm_hidden, lstm_cell = lstm.apply(inputs = lstm_tmp, mask=context_mask.astype(theano.config.floatX))
-            else:
-                lstm_hidden, lstm_cell = lstm.apply(inputs = lstm_tmp, states = h0, mask=context_mask.astype(theano.config.floatX))
-            h0 = lstm_hidden[-1, :, :]
-            c0 = lstm_cell[-1,:,:]
-
+        mlstm_ins = Linear(input_dim=config.embed_size, output_dim=4 * config.lstm_size, name='mlstm_in')
+        mlstm_ins.weights_init = IsotropicGaussian(std= numpy.sqrt(2)/numpy.sqrt(config.embed_size+config.lstm_size))
+        mlstm_ins.biases_init = Constant(0)
+        mlstm_ins.initialize()
+        mlstm = MLSTM(config.lstm_time, config.lstm_size, shared = False)
+        mlstm.weights_init = IsotropicGaussian(std= numpy.sqrt(2)/numpy.sqrt(config.embed_size+config.lstm_size))
+        mlstm.biases_init = Constant(0)
+        mlstm.initialize()
+        mlstm_hidden, mlstm_cell = mlstm.apply(inputs = mlstm_ins.apply(context_embed), mask = context_mask.astype(theano.config.floatX))
         # Create and apply output MLP
         out_mlp = MLP(dims = [config.lstm_size*2+config.type_embed_size] + [config.n_labels],
                           activations = [Identity()],
                           name='out_mlp')
-        out_mlp.weights_init = IsotropicGaussian(std = numpy.sqrt(2)/numpy.sqrt(config.lstm_size+config.n_labels))
-        bricks.append(out_mlp)
-        mention_hidden = tensor.concatenate([lstm_hidden[mention_end, tensor.arange(context.shape[1]), :],
+        out_mlp.weights_init = IsotropicGaussian(std = numpy.sqrt(2)/numpy.sqrt(config.lstm_size*2+config.n_labels))
+        out_mlp.biases_init = Constant(0)
+        out_mlp.initialize()
+        out_mlp_inputs = tensor.concatenate([lstm_hidden[mention_end, tensor.arange(context.shape[1]), :],
                                             lstm_hidden[mention_begin, tensor.arange(context.shape[1]), :]],axis=1)
-        self.mention_hidden = mention_hidden
-        mlp_input = tensor.concatenate([mention_hidden,type_embed],axis=1)
-        probs = out_mlp.apply(mlp_input)
+        out_mlp_inputs = tensor.concatenate([out_mlp_inputs, type_embed],axis=1)
+        probs = out_mlp.apply(out_mlp_inputs)
         # Calculate prediction, cost and error rate
-        pred = probs.argmax(axis=1)
-        cost = Softmax().categorical_cross_entropy(label, probs).mean()
-        error_rate = tensor.neq(label, pred).mean()
+        self.get_output(label, probs)
 
-        # Other stuff
-        cost.name = 'cost'
-        error_rate.name = 'error_rate'
-
-        self.sgd_cost = cost
-        self.monitor_vars = [[cost], [error_rate]]
-        self.monitor_vars_valid = [[cost], [error_rate]]
-        self.error_rate = error_rate
-        self.pred = pred
-        # Initialize bricks
-        for brick in bricks:
-            brick.biases_init = Constant(0)
-            brick.initialize()
-
-class WLSTMM():
+class WLSTMM(MTLM):
+    '''
+    Weighted Single LSTM Model
+    '''
     def __init__(self, config, dataset):
         context = tensor.imatrix('context')                                 # shape: batch_size*sequence_length
         mention_begin = tensor.ivector('mention_begin')
@@ -201,23 +179,11 @@ class WLSTMM():
                                             mwlstm_hidden[mention_begin, tensor.arange(context.shape[1]), :]],axis=1)
         probs = out_mlp.apply(out_mlp_inputs)
         # Calculate prediction, cost and error rate
-        pred = probs.argmax(axis=1)
-        cost = Softmax().categorical_cross_entropy(label, probs).mean()
-        error_rate = tensor.neq(label, pred).mean()
+        self.get_output(label, probs)
 
-        # Other stuff
-        cost.name = 'cost'
-        error_rate.name = 'error_rate'
-
-        self.sgd_cost = cost
-        self.monitor_vars = [[cost], [error_rate],[delta]]
-        self.monitor_vars_valid = [[cost], [error_rate], [delta]]
-        self.pred = pred
-        self.error_rate = error_rate
-
-class BDLSTMM():
+class BDLSTMM(MTLM):
     '''
-    Bi-direction lstm
+    Bi-direction LSTM Model: order_lstm(mention_end)||reverse_lstm(mention_begin)
     '''
     def __init__(self, config, dataset):
         order_context = tensor.imatrix('order_context')                                 # shape: batch_size*sequence_length
@@ -267,26 +233,75 @@ class BDLSTMM():
         self.mention_hidden = out_mlp_inputs
         probs = out_mlp.apply(out_mlp_inputs)
         # Calculate prediction, cost and error rate
-        pred = probs.argmax(axis=1)
-        cost = Softmax().categorical_cross_entropy(label, probs).mean()
-        error_rate = tensor.neq(label, pred).mean()
+        self.get_output(label, probs)
 
-        # Other stuff
-        cost.name = 'cost'
-        error_rate.name = 'error_rate'
+class BDLSTMM2(MTLM):
+    '''
+    Bi-direction LSTM Model: order_lstm(mention_begin-1)||max_pooling(mention)||reverse_lstm(mention_end+1)
+    '''
+    def __init__(self, config, dataset):
+        order_context = tensor.imatrix('order_context')                                 # shape: batch_size*sequence_length
+        order_context_mask = tensor.imatrix('order_context_mask')
+        reverse_context = tensor.imatrix('reverse_context')                                 # shape: batch_size*sequence_length
+        reverse_context_mask = tensor.imatrix('reverse_context_mask')
+        mention = tensor.imatrix('mention')
+        mention_mask = tensor.imatrix('mention_mask')
+        label = tensor.ivector('label')
+        bricks = []
 
-        self.sgd_cost = cost
-        self.monitor_vars = [[cost], [error_rate]]
-        self.monitor_vars_valid = [[cost], [error_rate]]
-        self.pred = pred
-        self.error_rate = error_rate
+        # set time as first dimension
+        order_context = order_context.dimshuffle(1, 0)
+        order_context_mask = order_context_mask.dimshuffle(1, 0)
+        reverse_context = reverse_context.dimshuffle(1, 0)
+        reverse_context_mask = reverse_context_mask.dimshuffle(1, 0)
+        # Initialize embedding
+        embed = Lookup(len(dataset.word2id), config.embed_size, name='word_embed')
+        embs = initialize_embed(config, dataset.word2id)
+        embed.initialize_with_pretrain(embs)                    # initialize embeding table with pre-traing values
+        # Embed contexts
+        order_context_embed = embed.apply(order_context)
+        reverse_context_embed = embed.apply(reverse_context)
+        mention_embed = embed.apply(mention)*mention_mask[:,:,None]
+        
+        mention_pooled = self.max_pool(mention_embed)
 
+
+        inputs = [order_context_embed, reverse_context_embed]
+        masks = [order_context_mask, reverse_context_mask]
+        names = ["order", "reverse"]
+        hiddens = []
+        for i in range(len(inputs)):
+            lstm_ins = Linear(input_dim=config.embed_size, output_dim=4 * config.lstm_size, name='%s_lstm_in' % names[i])
+            lstm_ins.weights_init = IsotropicGaussian(std= numpy.sqrt(2)/numpy.sqrt(config.embed_size+config.lstm_size))
+            lstm_ins.biases_init = Constant(0)
+            lstm_ins.initialize()
+            lstm = LSTM(dim=config.lstm_size, activation=Tanh(), name='%s_lstm' % names[i])
+            lstm.weights_init = IsotropicGaussian(std= 1/numpy.sqrt(config.lstm_size))
+            lstm.biases_init = Constant(0)
+            lstm.initialize()
+            hidden, _ = lstm.apply(inputs = lstm_ins.apply(inputs[i]), mask=masks[i].astype(theano.config.floatX))
+            hiddens.append(hidden)
+        # Create and apply output MLP
+        out_mlp = MLP(dims = [config.lstm_size*2+config.embed_size] + [config.n_labels],
+                          activations = [Identity()],
+                          name='out_mlp')
+        out_mlp.weights_init = IsotropicGaussian(std = numpy.sqrt(2)/numpy.sqrt(config.lstm_size*2+config.embed_size+config.n_labels))
+        out_mlp.biases_init = Constant(0)
+        out_mlp.initialize()
+        out_mlp_inputs = tensor.concatenate([hiddens[0][-1,:,:], hiddens[1][-1,:,:], mention_pooled],axis=1)
+        self.mention_hidden = out_mlp_inputs
+        probs = out_mlp.apply(out_mlp_inputs)
+        # Calculate prediction, cost and error rate
+        self.get_output(label, probs)
+
+    def max_pool(self, embed):
+        return tensor.max(tensor.abs_(embed), axis = 1)
 
 def initialize_embed(config, word2id):
-    if config.with_pre_train:
+    if config.with_pre_train and not config.debug:
         path = config.embed_path
     else:
-        path = config.emebed_backup_path
+        path = config.embed_backup_path
     embs = []
     with codecs.open(path,'r','UTF-8') as f:
         for line in f:

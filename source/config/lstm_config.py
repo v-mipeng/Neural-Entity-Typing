@@ -2,12 +2,16 @@ from blocks.algorithms import BasicMomentum, AdaDelta, RMSProp, Adam, CompositeR
 import os
 from model.step_rule import WAdaDelta
 
-from model.multi_time_lstm import MTLM, MTLDM, WLSTMM, BDLSTMM
+from model.lstm_model import MTLM, MTLDM, WLSTMM, BDLSTMM, BDLSTMM2
 
 class BasicConfig:
-    debug = False
+    '''
+    Basic Config
+    '''
+    debug = True
 
-    develop = True
+    # True if data is pre-processed, otherwise False
+    develop = True              
 
     basedir = r"./";
 
@@ -15,14 +19,21 @@ class BasicConfig:
 
     data_path = os.path.join(basedir,"input");
 
-    model_path = os.path.join(basedir,"output/models/multi_time_lstm_test.pkl");
+    model_path = os.path.join(basedir,"output/models/multi_time_lstm_test.pkl")
 
     word2id_path = os.path.join(basedir, "input/tables/stem 20 times/word2id.txt")
 
     word_freq_path = os.path.join(basedir, "input/tables/stem 20 times/word freq.txt")
 
+    # True: use vectors in embed_path otherwise embed_backup_path to initialize word embeddings
+    with_pre_train = True
+
     embed_path = os.path.join(basedir, "input/tables/word embedding.txt")
 
+    # Small size randomly selected pre-trained embedding
+    embed_backup_path = os.path.join(basedir, "input/tables/word embedding backup.txt") 
+
+    # If is directory, read all the files with extension ".txt"
     train_path = os.path.join(data_path, "test/")
 
     valid_portion = 0.05
@@ -35,10 +46,13 @@ class BasicConfig:
 
     predict_result_path = "./output/result/predict/"
 
+    # GPU: "int32"; CPU: "int64"
     int_type = "int32"
 
+    # Do stemming (special)if frequency of word in context except for that in mention < sparse_word_threshold
     sparse_word_threshold = 10
 
+    # Do stemming (special) if frequency of word in mention < sparse_mention_threshold
     sparse_mention_threshold = 50
 
     batch_size = 32
@@ -46,18 +60,16 @@ class BasicConfig:
 
     embed_size = 300
 
-    lstm_time = 2
     lstm_size = 256
-
-    type_embed_size = 100
 
     n_labels = 5
 
     step_rule = AdaDelta(decay_rate = 0.95, epsilon = 1e-06)
-    step_rule = CompositeRule([Scale(1.0), BasicMomentum(momentum=0.9)])
+
+    # Measured by batches, e.g, valid every 1000 batches
     valid_freq = 1000
     save_freq = 1000
-    print_freq = 100    # measured by batches
+    print_freq = 100    
 
     to_label_id = {
     u"music.music": 0,
@@ -78,10 +90,19 @@ class BasicConfig:
     }
 
 class MTLC(BasicConfig):
+    '''
+    Multiple Time LSTM Config
+    '''
     Model = MTLM
 
+    with_pre_train = True
+
+    lstm_time = 2
  
 class MTLDC(BasicConfig):
+    '''
+    Multiple Time LSTM with DBpedia Config
+    '''
     Model = MTLDM
 
     develop = True
@@ -91,13 +112,28 @@ class MTLDC(BasicConfig):
     type_embed_size = 100
 
 class WLSTMC(BasicConfig):
+    '''
+    Weighted (with Gaussian distribution) Single LSTM Config
+    '''
     Model = WLSTMM
 
+    # Define step rule for sigma of gaussian distribution
     step_rule = WAdaDelta(special_para_names = "delta")
 
     model_path = os.path.join(BasicConfig.basedir,"output/models/weight_lstm.pkl");
 
 class BDLSTMC(BasicConfig):
+    '''
+    Bi-direction LSTM Config: order_lstm(mention_end)||reverse_lstm(mention_begin)
+    '''
     Model = BDLSTMM
 
     model_path = os.path.join(BasicConfig.basedir,"output/models/bidir_lstm.pkl");
+
+class BDLSTMC2(BasicConfig):
+    '''
+    Bi-direction LSTM Config: order_lstm(mention_begin-1)||max_pooling(mention)||reverse_lstm(mention_end+1)
+    '''
+    Model = BDLSTMM2
+
+    model_path = os.path.join(BasicConfig.basedir,"output/models/bidir_lstm2.pkl");

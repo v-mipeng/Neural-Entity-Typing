@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3ebda6c3-5f65-4272-9d9c-a84a0d1b5935</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>main.py</StartupFile>
+    <StartupFile>source\service\web.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -28,10 +28,13 @@
     <Compile Include="main.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="source\config\multi_time_lstm.py">
+    <Compile Include="source\service\web.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="source\config\tridi_lstm.py">
+    <Compile Include="source\service\web2.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="source\config\lstm_config.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="source\config\__init__.py" />
@@ -41,32 +44,20 @@
     <Compile Include="source\dataset\error.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="source\dataset\multi_time_lstm.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="source\dataset\tridi_lstm.py">
+    <Compile Include="source\dataset\lstm_dataset.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="source\dataset\__init__.py" />
-    <Compile Include="source\ensemble.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="source\entrance\base.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="source\entrance\multi_time_lstm.py" />
-    <Compile Include="source\entrance\tridi_lstm.py">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="source\entrance\lstm_entrance.py" />
     <Compile Include="source\entrance\__init__.py" />
     <Compile Include="source\model\lstm.py" />
-    <Compile Include="source\model\multi_time_lstm.py">
+    <Compile Include="source\model\lstm_model.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="source\model\step_rule.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="source\model\tridir_lstm.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="source\model\word_emb.py">
@@ -99,6 +90,7 @@
     <Compile Include="source\script\__init__.py" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="source\service\" />
     <Folder Include="source\dataset\" />
     <Folder Include="source\entrance\" />
     <Folder Include="source\model\" />

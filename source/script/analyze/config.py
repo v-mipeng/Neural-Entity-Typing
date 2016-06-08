@@ -1,1 +1,1 @@
-basedir = "./input/train/"
+basedir = "./input/valid/"

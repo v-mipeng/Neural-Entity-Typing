@@ -17,7 +17,7 @@ u"broadcast.content": 0,
 u"book.written_work": 0,
 u"award.award": 0,
 u"body.part": 0,
-u"chemicstry.chemicstry": 0,
+u"chemistry.chemistry": 0,
 u"time.event": 0,
 u"food.food": 0,
 u"language.language": 0,
@@ -38,11 +38,11 @@ id2label = {
     }
 
 basedir = config.basedir
-files = listdir(basedir)
+files = [file for file in listdir(basedir) if file.endswith(".txt") and not file.startswith("data info")]
 label2num = {}
 for file in files:
     if os.path.isfile(os.path.join(basedir, file)):
-        with codecs.open(os.path.join(basedir, file),"r", "UTF-8") as f:
+        with codecs.open(os.path.join(basedir, file),"r") as f:
             for line in f:
                 line = line.strip()
                 array = line.split('\t')

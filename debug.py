@@ -1,6 +1,7 @@
 class BaseClass(object):
     def __init__(self):
         print("base init")
+        self.d = 0
         BaseClass.static_fun()
 
     def test(self):
@@ -20,9 +21,11 @@ class BaseClass(object):
 class SubClass(BaseClass):
     def __init__(self):
         super(SubClass, self).__init__()
+        self.d = 3
 
     def _sub_fun(self, value = True):
         print("in sub fun")
+        return 3,2
 
 def average(values):
     """Computes the arithmetic mean of a list of numbers.
@@ -31,6 +34,9 @@ def average(values):
     40
     """
     return 1.0*sum(values) / len(values)
+
+c = SubClass()
+g = c._sub_fun()
 
 #import doctest
 #doctest.testmod()   # automatically validate the embedded tests
