@@ -9,7 +9,7 @@ import sys
 sys.path.append("./source")
 from entrance.lstm_entrance import MTLE, BDLSTME
 print("Initialize Model...")
-predictor = BDLSTME()
+predictor = MTLE()
 print("Model initialized!")
 
 class post_example_handler(web.RequestHandler):

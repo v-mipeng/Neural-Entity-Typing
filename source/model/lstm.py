@@ -1,9 +1,7 @@
-import numpy
+﻿import numpy
 import theano
 import theano.tensor as tensor
 import blocks.bricks
-import blocks.bricks.attention
-import blocks.bricks.interfaces
 from blocks.bricks.recurrent import LSTM, BaseRecurrent, Bidirectional, GatedRecurrent, SimpleRecurrent
 from blocks.bricks import Tanh, Softmax, Linear, MLP, Identity, Rectifier
 from blocks.initialization import Constant, IsotropicGaussian, Orthogonal
@@ -150,6 +148,9 @@ class MLSTM(object):
             self.rnns[0].initialize()
 
 class MWLSTM(MLSTM):
+    '''
+    Weighted Multiple Time LSTM
+    '''
     def __init__(self, times, dim, activation = None, gate_activation = None, shared = False, **kwargs):
         super(MWLSTM, self).__init__(times, dim, activation, gate_activation, shared , **kwargs)
         self.model = WLSTM

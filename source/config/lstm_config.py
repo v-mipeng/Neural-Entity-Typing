@@ -19,11 +19,11 @@ class BasicConfig:
 
     data_path = os.path.join(basedir,"input");
 
-    model_path = os.path.join(basedir,"output/models/multi_time_lstm_test.pkl")
+    model_path = os.path.join(basedir,"output/models/multi_time_lstm_debug.pkl")
 
-    word2id_path = os.path.join(basedir, "input/tables/stem 20 times/word2id.txt")
+    word2id_path = os.path.join(basedir, "input/tables/debug/word2id.txt")
 
-    word_freq_path = os.path.join(basedir, "input/tables/stem 20 times/word freq.txt")
+    word_freq_path = os.path.join(basedir, "input/tables/debug/word freq.txt")
 
     # True: use vectors in embed_path otherwise embed_backup_path to initialize word embeddings
     with_pre_train = True
@@ -53,7 +53,7 @@ class BasicConfig:
     sparse_word_threshold = 10
 
     # Do stemming (special) if frequency of word in mention < sparse_mention_threshold
-    sparse_mention_threshold = 50
+    sparse_mention_threshold = 10
 
     batch_size = 32
     sort_batch_count = 20

@@ -4,7 +4,7 @@ import numpy
 import re
 import nltk
 from nltk.tokenize.punkt import PunktSentenceTokenizer
-from config.multi_time_lstm import BasicConfig as config
+from config.lstm_config import BasicConfig as config
 import ntpath
 import os
 

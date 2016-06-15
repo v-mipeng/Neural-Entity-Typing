@@ -1,4 +1,4 @@
-import theano
+﻿import theano
 from theano import tensor
 import numpy
 import codecs
@@ -37,7 +37,7 @@ class MTLM(object):
         embed.initialize_with_pretrain(embs)                    # initialize embeding table with pre-traing values
         # Embed contexts
         context_embed = embed.apply(context)
-
+        # Build  and apply multiple-time LSTM
         mlstm_ins = Linear(input_dim=config.embed_size, output_dim=4 * config.lstm_size, name='mlstm_in')
         mlstm_ins.weights_init = IsotropicGaussian(std= numpy.sqrt(2)/numpy.sqrt(config.embed_size+config.lstm_size))
         mlstm_ins.biases_init = Constant(0)
@@ -61,6 +61,8 @@ class MTLM(object):
 
     def get_output(self, label, probs):
         # Calculate prediction, cost and error rate
+        prob_max = probs.max(axis = 1)
+        probs = probs - prob_max[:,None]
         pred = probs.argmax(axis=1)
         cost = Softmax().categorical_cross_entropy(label, probs).mean()
         error_rate = tensor.neq(label, pred).mean()
@@ -232,7 +234,6 @@ class BDLSTMM(MTLM):
         out_mlp_inputs = tensor.concatenate([hiddens[0][-1,:,:], hiddens[1][-1,:,:]],axis=1)
         self.mention_hidden = out_mlp_inputs
         probs = out_mlp.apply(out_mlp_inputs)
-        # Calculate prediction, cost and error rate
         self.get_output(label, probs)
 
 class BDLSTMM2(MTLM):

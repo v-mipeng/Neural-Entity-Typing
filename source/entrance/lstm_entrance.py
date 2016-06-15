@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import numpy
 import sys
 import os
@@ -56,7 +56,7 @@ class MTLE(BasicEntrance):
     '''
     def __init__(self):
         self.config = None
-        self.ds = None
+        self.dataset = None
         self.model = None
         self.model_path = None
         self.f_pred = None
@@ -74,8 +74,9 @@ class MTLE(BasicEntrance):
     
     def init(self):
         self.config = MTLC()
-        self.ds = MTL(self.config)
-        self.init_model(self.config.model_path)
+        self.dataset = MTL(self.config)
+        if self.dataset.word2id is None:
+            self.init_model()
 
     def train(self, train_path = None, valid_portion = None, valid_path =None, model_path = None):
         '''
@@ -102,14 +103,14 @@ class MTLE(BasicEntrance):
         assert valid_portion >= 0 and valid_portion < 1.0
 
         if valid_path is None:
-            train_stream, valid_stream = self.ds.get_train_stream(train_path, valid_portion)
+            train_stream, valid_stream = self.dataset.get_train_stream(train_path, valid_portion)
         else:
-            train_stream = self.ds.get_train_stream(train_path, 0.0)
-            valid_stream = self.ds.get_train_stream(valid_path, 0.0)
+            train_stream = self.dataset.get_train_stream(train_path, 0.0)
+            valid_stream = self.dataset.get_train_stream(valid_path, 0.0)
             
         # Build the Blocks stuff for training
         if self.m is None:
-            self.m = self.config.Model(self.config, self.ds) # with word2id
+            self.m = self.config.Model(self.config, self.dataset) # with word2id
         if self.model is None:
             self.model = Model(self.m.sgd_cost) 
 
@@ -230,7 +231,7 @@ class MTLE(BasicEntrance):
                 self.init_model(model_path)
         elif self.model_path is None:
             self.init_model(self.config.model_path)
-        stream, data, errors = self.ds.get_predict_stream(samples = samples)
+        stream, data, errors = self.dataset.get_predict_stream(samples = samples)
         if stream is None:
             return [], errors
         labels, confidences = self.pred(stream)
@@ -263,9 +264,9 @@ class MTLE(BasicEntrance):
         @return result: a list of tuples, with every tuple consistent with the output format.
         '''
         if for_test:
-            stream, data, errors = self.ds.get_test_stream(file_path)
+            stream, data, errors = self.dataset.get_test_stream(file_path)
         else:
-            stream, data, errors = self.ds.get_predict_stream(file_path)
+            stream, data, errors = self.dataset.get_predict_stream(file_path)
         result = []
         labels,_ = self.pred(stream)
         data = zip(*data)
@@ -296,7 +297,7 @@ class MTLE(BasicEntrance):
 
     def init_model(self, model_path = None):
         if self.m is None:
-            self.m = self.config.Model(self.config, self.ds)
+            self.m = self.config.Model(self.config, self.dataset)
         model = Model(self.m.sgd_cost)   
         if model_path is None:
             model_path = self.config.model_path
@@ -319,7 +320,7 @@ class MTLDE(MTLE):
 
     def init(self):
         self.config = MTLDC()
-        self.ds = MTLD(self.config)
+        self.dataset = MTLD(self.config)
 
 class WLSTME(MTLE):
     '''
@@ -353,14 +354,14 @@ class WLSTME(MTLE):
         assert valid_portion >= 0 and valid_portion < 1.0
 
         if valid_path is None:
-            train_stream, valid_stream = self.ds.get_train_stream(train_path, valid_portion)
+            train_stream, valid_stream = self.dataset.get_train_stream(train_path, valid_portion)
         else:
-            train_stream = self.ds.get_train_stream(train_path, 0.0)
-            valid_stream = self.ds.get_train_stream(valid_path, 0.0)
+            train_stream = self.dataset.get_train_stream(train_path, 0.0)
+            valid_stream = self.dataset.get_train_stream(valid_path, 0.0)
 
         # Build the Blocks stuff for training
         if self.m is None:
-            self.m = self.config.Model(self.config, self.ds) # with word2id
+            self.m = self.config.Model(self.config, self.dataset) # with word2id
         if self.model is None:
             self.model = Model(self.m.sgd_cost) 
         #cg = ComputationGraph(self.m.weights)
@@ -415,7 +416,7 @@ class WLSTME(MTLE):
 
     def init(self):
         self.config = WLSTMC()
-        self.ds = WLSTMD(self.config)
+        self.dataset = WLSTMD(self.config)
 
 class BDLSTME(MTLE):
     '''
@@ -426,8 +427,7 @@ class BDLSTME(MTLE):
 
     def init(self):
         self.config = BDLSTMC()
-        self.ds = BDLSTMD(self.config)
-        self.init_model(self.config.model_path)
+        self.dataset = BDLSTMD(self.config)
 
 class BDLSTME2(MTLE):
     '''
@@ -438,4 +438,4 @@ class BDLSTME2(MTLE):
 
     def init(self):
         self.config = BDLSTMC2()
-        self.ds = BDLSTMD2(self.config)
+        self.dataset = BDLSTMD2(self.config)
